@@ -1,0 +1,98 @@
+<html>
+<body>
+<pre>
+<h1>µVision Build Log</h1>
+<h2>Tool Versions:</h2>
+IDE-Version: µVision V5.42.0.0
+Copyright (C) 2025 ARM Ltd and ARM Germany GmbH. All rights reserved.
+License Information: Hoang Do, i, LIC=----
+ 
+Tool Versions:
+Toolchain:       MDK-Lite  Version: 5.42.0.0
+Toolchain Path:  C:\Users\DELL\AppData\Local\Keil_v5\ARM\ARMCLANG\Bin
+C Compiler:      ArmClang.exe V6.23
+Assembler:       Armasm.exe V6.23
+Linker/Locator:  ArmLink.exe V6.23
+Library Manager: ArmAr.exe V6.23
+Hex Converter:   FromElf.exe V6.23
+CPU DLL:         SARMCM3.DLL V5.42.0.0
+Dialog DLL:      DCM.DLL V1.17.5.0
+Target DLL:      STLink\ST-LINKIII-KEIL_SWO.dll V3.3.0.0
+Dialog DLL:      TCM.DLL V1.56.6.0
+ 
+<h2>Project:</h2>
+D:\esp32\STM32F103_20250407\TEST2.uvprojx
+Project File Date:  04/07/2025
+
+<h2>Output:</h2>
+*** Using Compiler 'V6.23', folder: 'C:\Users\DELL\AppData\Local\Keil_v5\ARM\ARMCLANG\Bin'
+Rebuild target 'Tartget1'
+compiling uart.c...
+compiling main.c...
+compiling system_stm32f10x.c...
+compiling stm32f10x_gpio.c...
+compiling stm32f10x_rcc.c...
+compiling stm32f10x_usart.c...
+compiling timer.c...
+compiling delay.c...
+assembling startup_stm32f10x_md.s...
+compiling stm32f10x_tim.c...
+dht11.c(16): warning: unused variable 'u8Buff' [-Wunused-variable]
+   16 |         uint8_t u8Buff[5];
+      |                 ^~~~~~
+dht11.c(17): warning: unused variable 'u8CheckSum' [-Wunused-variable]
+   17 |         uint8_t u8CheckSum;
+      |                 ^~~~~~~~~~
+dht11.c(18): warning: unused variable 'i' [-Wunused-variable]
+   18 |         uint8_t i;
+      |                 ^
+dht11.c(272): warning: passing 'uint8_t[50]' (aka 'unsigned char[50]') to parameter of type 'char *' converts between pointers to integer types where one is of the unique plain 'char' type and the other is not [-Wpointer-sign]
+  272 |         sprintf(buffer, "Nhiet do: %d.%d, Do am: %d.%d%%\r\n",
+      |                 ^~~~~~
+C:\Users\DELL\AppData\Local\Keil_v5\ARM\ARMCLANG\bin\..\include\stdio.h(417): note: passing argument to parameter here
+  417 | extern _ARMABI int sprintf(char * __restrict /*s*/, const char * __restrict /*format*/, ...) __attribute__((__nonnull__(1,2)));
+      |                                                   ^
+dht11.c(274): warning: returning 'uint8_t[50]' (aka 'unsigned char[50]') from a function with result type 'char *' converts between pointers to integer types where one is of the unique plain 'char' type and the other is not [-Wpointer-sign]
+  274 |             return buffer;
+      |                    ^~~~~~
+dht11.c(274): warning: address of stack memory associated with local variable 'buffer' returned [-Wreturn-stack-address]
+  274 |             return buffer;
+      |                    ^~~~~~
+6 warnings generated.
+compiling dht11.c...
+i2c.c(89): warning: variable 'u8Ret' is uninitialized when used here [-Wuninitialized]
+   89 |                 u8Ret <<= 1;
+      |                 ^~~~~
+i2c.c(83): note: initialize the variable 'u8Ret' to silence this warning
+   83 |         uint8_t u8Ret;
+      |                      ^
+      |                       = '\0'
+1 warning generated.
+compiling i2c.c...
+i2c_lcd.c(126): warning: passing 'char *' to parameter of type 'uint8_t *' (aka 'unsigned char *') converts between pointers to integer types where one is of the unique plain 'char' type and the other is not [-Wpointer-sign]
+  126 |                 I2C_Read(I2C_LCD_ADDR + 1, &temp, 1);
+      |                                            ^~~~~
+.\i2c.h(22): note: passing argument to parameter 'pData' here
+   22 | uint8_t I2C_Read(uint8_t Address, uint8_t *pData, uint8_t length);
+      |                                            ^
+1 warning generated.
+compiling i2c_lcd.c...
+linking...
+Program Size: Code=5800 RO-data=272 RW-data=0 ZI-data=1648  
+".\Objects\TEST2.axf" - 0 Error(s), 8 Warning(s).
+
+<h2>Software Packages used:</h2>
+
+Package Vendor: Keil
+                https://www.keil.com/pack/Keil.STM32F1xx_DFP.2.4.1.pack
+                Keil::STM32F1xx_DFP@2.4.1
+                STMicroelectronics STM32F1 Series Device Support, Drivers and Examples
+
+<h2>Collection of Component include folders:</h2>
+  C:/Users/DELL/AppData/Local/Arm/Packs/Keil/STM32F1xx_DFP/2.4.1/Device/Include
+
+<h2>Collection of Component Files used:</h2>
+Build Time Elapsed:  00:00:01
+</pre>
+</body>
+</html>
