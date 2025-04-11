@@ -59,5 +59,6 @@
   "files.associations": {
     "stm32f10x.h": "c",
     "stdio.h": "c"
-  }
+  },
+  "idf.pythonInstallPath": "c:\\Espressif\\tools\\idf-python\\3.11.2\\python.exe"
 }

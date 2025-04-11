@@ -25,4 +25,4 @@
   Libraries\STM32F10x_StdPeriph_Driver\inc\stm32f10x_tim.h \
   Libraries\STM32F10x_StdPeriph_Driver\inc\stm32f10x_usart.h \
   Libraries\STM32F10x_StdPeriph_Driver\inc\stm32f10x_wwdg.h \
-  Libraries\STM32F10x_StdPeriph_Driver\inc\misc.h i2c.h
+  Libraries\STM32F10x_StdPeriph_Driver\inc\misc.h delay.h

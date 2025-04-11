@@ -22,20 +22,28 @@ Dialog DLL:      TCM.DLL V1.56.6.0
  
 <h2>Project:</h2>
 D:\esp32\STM32F103_20250407\TEST2.uvprojx
-Project File Date:  04/07/2025
+Project File Date:  04/09/2025
 
 <h2>Output:</h2>
 *** Using Compiler 'V6.23', folder: 'C:\Users\DELL\AppData\Local\Keil_v5\ARM\ARMCLANG\Bin'
 Rebuild target 'Tartget1'
-compiling uart.c...
 compiling main.c...
 compiling system_stm32f10x.c...
+compiling uart.c...
 compiling stm32f10x_gpio.c...
 compiling stm32f10x_rcc.c...
 compiling stm32f10x_usart.c...
-compiling timer.c...
 compiling delay.c...
-assembling startup_stm32f10x_md.s...
+compiling timer.c...
+i2c.c(90): warning: variable 'u8Ret' is uninitialized when used here [-Wuninitialized]
+   90 |                 u8Ret <<= 1;
+      |                 ^~~~~
+i2c.c(84): note: initialize the variable 'u8Ret' to silence this warning
+   84 |         uint8_t u8Ret;
+      |                      ^
+      |                       = '\0'
+1 warning generated.
+compiling i2c.c...
 compiling stm32f10x_tim.c...
 dht11.c(16): warning: unused variable 'u8Buff' [-Wunused-variable]
    16 |         uint8_t u8Buff[5];
@@ -60,26 +68,12 @@ dht11.c(274): warning: address of stack memory associated with local variable 'b
       |                    ^~~~~~
 6 warnings generated.
 compiling dht11.c...
-i2c.c(89): warning: variable 'u8Ret' is uninitialized when used here [-Wuninitialized]
-   89 |                 u8Ret <<= 1;
-      |                 ^~~~~
-i2c.c(83): note: initialize the variable 'u8Ret' to silence this warning
-   83 |         uint8_t u8Ret;
-      |                      ^
-      |                       = '\0'
-1 warning generated.
-compiling i2c.c...
-i2c_lcd.c(126): warning: passing 'char *' to parameter of type 'uint8_t *' (aka 'unsigned char *') converts between pointers to integer types where one is of the unique plain 'char' type and the other is not [-Wpointer-sign]
-  126 |                 I2C_Read(I2C_LCD_ADDR + 1, &temp, 1);
-      |                                            ^~~~~
-.\i2c.h(22): note: passing argument to parameter 'pData' here
-   22 | uint8_t I2C_Read(uint8_t Address, uint8_t *pData, uint8_t length);
-      |                                            ^
-1 warning generated.
 compiling i2c_lcd.c...
+compiling stm32f10x_i2c.c...
+assembling startup_stm32f10x_md.s...
 linking...
-Program Size: Code=5800 RO-data=272 RW-data=0 ZI-data=1648  
-".\Objects\TEST2.axf" - 0 Error(s), 8 Warning(s).
+Program Size: Code=3482 RO-data=274 RW-data=0 ZI-data=1632  
+".\Objects\TEST2.axf" - 0 Error(s), 7 Warning(s).
 
 <h2>Software Packages used:</h2>
 
