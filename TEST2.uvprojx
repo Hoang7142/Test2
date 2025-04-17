@@ -454,6 +454,11 @@
               <FileType>1</FileType>
               <FilePath>.\Libraries\STM32F10x_StdPeriph_Driver\src\stm32f10x_i2c.c</FilePath>
             </File>
+            <File>
+              <FileName>pwm.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\pwm.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

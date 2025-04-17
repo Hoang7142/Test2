@@ -8,5 +8,6 @@ void TIM2_Init(void)
     timerInit.TIM_Period = 0xFFFF;
     timerInit.TIM_Prescaler = 72 - 1;
     TIM_TimeBaseInit(TIM2, &timerInit);
+	  //TIM_ClearFlag(TIM2, TIM_FLAG_Update);
     TIM_Cmd(TIM2, ENABLE);
 }

@@ -78,7 +78,7 @@ char* DHT11_Data(void){
 	uint8_t u8Buff[5];
 	uint8_t u8CheckSum;
 	uint8_t i;
-    uint8_t buffer[50];
+    static uint8_t buffer[50];
     /* nhan byte so 1 */
 		for (i = 0; i < 8; ++i) {
 			/* cho chan PB12 len cao */

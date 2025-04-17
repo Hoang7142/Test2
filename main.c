@@ -6,10 +6,7 @@
 #include "timer.h"
 #include "dht11.h"
 #include "i2c_lcd.h"
-
-
-
-
+#include "pwm.h"
 
 
 
@@ -25,29 +22,17 @@ int main(void)
 	 
     GPIO_Init(GPIOC, &gpioInit);
 	  
-    //GPIO_PWM_Config();  
-    //PWM1_Init(10);  // Duty cycle 10%
-    //PWM2_Init(25);  // Duty cycle 25%
-    //PWM3_Init(40);  // Duty cycle 40%
-    //PWM4_Init(80);  // Duty cycle 80%
+
 
 	TIM2_Init();
 	UART_Init();
 	DHT11_Init();
 
-//	GPIO_SetBits (GPIOC,GPIO_Pin_13);
-//	Delay_Ms(200);
-//	GPIO_ResetBits(GPIOC,GPIO_Pin_13);
-//	Delay_Ms(200);
-//	GPIO_SetBits (GPIOC,GPIO_Pin_13);
-//	Delay_Ms(200);
-//	GPIO_ResetBits(GPIOC,GPIO_Pin_13);
-//	Delay_Ms(200);
-//	UART_SendString("Hello, UART! \r\n");
+
 //	I2C_LCD_Init();
 //	I2C_LCD_Clear();
 //	I2C_LCD_BackLight(1);
-//	I2C_LCD_Puts("huy");
+//	I2C_LCD_Puts("hoang");
 //	I2C_LCD_NewLine();
 //	I2C_LCD_Puts("I2C: PA0 - PA1");
 
@@ -60,15 +45,78 @@ int main(void)
 	while(1)
 	{
 		
-		DHT11_Check();
+	  DHT11_Check();
 		char* dulieu=DHT11_Data();
 		UART_SendString(dulieu);
 		GPIO_SetBits(GPIOC, GPIO_Pin_13);
 		Delay_Ms(500);
 		GPIO_ResetBits(GPIOC, GPIO_Pin_13);
 		Delay_Ms(500);
+		    
 	}
 	
 	return 0;
 	
 }
+//int main(void)
+//{
+//	GPIO_InitTypeDef gpioInit;
+//    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
+//    gpioInit.GPIO_Mode = GPIO_Mode_Out_PP;
+//    gpioInit.GPIO_Pin = GPIO_Pin_13;
+//    gpioInit.GPIO_Speed = GPIO_Speed_50MHz;
+//    GPIO_Init(GPIOC, &gpioInit);
+
+//	TIM2_Init();
+//	UART_Init();
+//	DHT11_Init();
+
+//	// Delay nh? d? c?m bi?n DHT11 ?n d?nh tru?c
+//	Delay_Ms(1000); 
+
+//	DHT11_Check(); // ?? ki?m tra DHT11 tru?c
+//	char* dulieu = DHT11_Data();  // ?? d?c d? li?u t? c?m bi?n
+//	UART_SendString(dulieu);      // G?i UART ki?m tra
+//	Delay_Ms(1000);
+
+//	// Bây gi? m?i kh?i d?ng LCD
+//	I2C_LCD_Init();
+//	I2C_LCD_Clear();
+//	I2C_LCD_BackLight(1);
+//	I2C_LCD_Puts("DHT11 Ready");
+//	I2C_LCD_NewLine();
+//	I2C_LCD_Puts(dulieu);
+
+//	while(1) {
+//		DHT11_Check();
+//		dulieu = DHT11_Data();
+
+//		I2C_LCD_Clear();
+//		
+//		I2C_LCD_Puts("DHT11:");
+//		I2C_LCD_NewLine();
+//		I2C_LCD_Puts(dulieu);
+//		I2C_LCD_NewLine();
+//		UART_SendString(dulieu);
+//		Delay_Ms(2000);
+//	}
+//}
+
+//int main(void)
+//{
+//    PWM_GPIO_Config();      // C?u hình PB4 cho PWM
+//    PWM_Init();             // C?u hình TIM3 PWM
+//    HBridge_GPIO_Config();  // C?u hình c?u H
+
+//    Motor_Forward();        // Cho quay thu?n
+//    PWM_SetDutyCycle(30);   // Ð? r?ng xung 30%
+
+//    while (1)
+//    {
+//        // PWM ch?y t? d?ng
+//    }
+//}
+
+
+
+
