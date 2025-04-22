@@ -1,4 +1,4 @@
-./objects/main.o: main.c \
+./objects/adc.o: adc.c adc.h \
   C:\Users\DELL\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.4.1\Device\Include\stm32f10x.h \
   Libraries\CMSIS\CM3\CoreSupport\core_cm3.h \
   C:\Users\DELL\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.4.1\Device\Include\system_stm32f10x.h \
@@ -25,5 +25,4 @@
   Libraries\STM32F10x_StdPeriph_Driver\inc\stm32f10x_tim.h \
   Libraries\STM32F10x_StdPeriph_Driver\inc\stm32f10x_usart.h \
   Libraries\STM32F10x_StdPeriph_Driver\inc\stm32f10x_wwdg.h \
-  Libraries\STM32F10x_StdPeriph_Driver\inc\misc.h delay.h uart.h timer.h \
-  dht11.h i2c_lcd.h pwm.h adc.h
+  Libraries\STM32F10x_StdPeriph_Driver\inc\misc.h

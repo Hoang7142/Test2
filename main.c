@@ -7,26 +7,27 @@
 #include "dht11.h"
 #include "i2c_lcd.h"
 #include "pwm.h"
+#include "adc.h"
 
 
 
 
-int main(void)
-{ 
-	
-	GPIO_InitTypeDef gpioInit;
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
-    gpioInit.GPIO_Mode = GPIO_Mode_Out_PP;
-    gpioInit.GPIO_Pin = GPIO_Pin_13;
-    gpioInit.GPIO_Speed = GPIO_Speed_50MHz;
-	 
-    GPIO_Init(GPIOC, &gpioInit);
-	  
+//int main(void)
+//{ 
+//	
+//	GPIO_InitTypeDef gpioInit;
+//    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
+//    gpioInit.GPIO_Mode = GPIO_Mode_Out_PP;
+//    gpioInit.GPIO_Pin = GPIO_Pin_13;
+//    gpioInit.GPIO_Speed = GPIO_Speed_50MHz;
+//	 
+//    GPIO_Init(GPIOC, &gpioInit);
+//	  
 
 
-	TIM2_Init();
-	UART_Init();
-	DHT11_Init();
+//	TIM2_Init();
+//	UART_Init();
+//	DHT11_Init();
 
 
 //	I2C_LCD_Init();
@@ -42,22 +43,22 @@ int main(void)
 
 
 
-	while(1)
-	{
-		
-	  DHT11_Check();
-		char* dulieu=DHT11_Data();
-		UART_SendString(dulieu);
-		GPIO_SetBits(GPIOC, GPIO_Pin_13);
-		Delay_Ms(500);
-		GPIO_ResetBits(GPIOC, GPIO_Pin_13);
-		Delay_Ms(500);
-		    
-	}
+//	while(1)
+//	{
+//		
+//	  DHT11_Check();
+//		char* dulieu=DHT11_Data();
+//		UART_SendString(dulieu);
+//		GPIO_SetBits(GPIOC, GPIO_Pin_13);
+//		Delay_Ms(500);
+//		GPIO_ResetBits(GPIOC, GPIO_Pin_13);
+//		Delay_Ms(500);
+//		    
+//	}
 	
-	return 0;
-	
-}
+//	return 0;
+//	
+//}
 //int main(void)
 //{
 //	GPIO_InitTypeDef gpioInit;
@@ -117,6 +118,23 @@ int main(void)
 //    }
 //}
 
+
+int main(void) {
+    UART_Init();     
+//    I2C_LCD_Init();         // Kh?i t?o LCD
+//    I2C_LCD_Clear();        // Xóa màn hình
+
+    ADC_InitConfig();       // Kh?i t?o ADC
+
+    while (1) {
+        char* do_am = GetDoAmDatString();  // L?y chu?i d? ?m d?t
+//        I2C_LCD_Clear();                   // Xóa LCD
+//        I2C_LCD_Puts(do_am);              // In chu?i lên LCD
+//        Delay_Ms(1000);                   // Delay 1s
+			UART_SendString(do_am);
+ 	    Delay_Ms(500);
+    }
+}
 
 
 
