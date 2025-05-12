@@ -5,7 +5,7 @@
 #include "stm32f10x.h"
 #include <stdint.h>
 
-#define I2C_LCD_ADDR 0x4E  
+#define I2C_LCD_ADDR 0x4E 
 
 void I2C_LCD_Init(void);
 void I2C_LCD_Puts(char *szStr);

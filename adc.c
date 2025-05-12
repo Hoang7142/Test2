@@ -50,3 +50,9 @@ char* GetDoAmDatString(void) {
     sprintf(buf, "Do am dat: %d%%", do_am);
     return buf;
 }
+
+uint8_t GetDoAmDatValue(void) {
+    uint16_t adc_val = ADC_Read();
+    uint8_t do_am = (uint8_t)((4095 - adc_val) * 100 / 4095);
+    return do_am;
+}

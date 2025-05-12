@@ -72,7 +72,8 @@ void DHT11_Check(void){
         }
     }
 }
-
+static uint8_t dht11_temperature = 0;
+static uint8_t dht11_humidity = 0;
 char* DHT11_Data(void){
     uint16_t u16Tim;
 	uint8_t u8Buff[5];
@@ -269,7 +270,21 @@ char* DHT11_Data(void){
 			while (1) {
 			}
 		}
-        sprintf(buffer, "Nhiet do: %d.%d, Do am: %d.%d%%\r\n",
-            u8Buff[2], u8Buff[3], u8Buff[0], u8Buff[1]);
+		dht11_humidity = u8Buff[0];     // Ð? ?m nguyên ph?n
+    dht11_temperature = u8Buff[2];  // Nhi?t d? nguyên ph?n
+		sprintf(buffer, "ND:%d.%d, DA:%d.%d%%\r\n",
+				u8Buff[2], u8Buff[3], u8Buff[0], u8Buff[1]);
+//		sprintf(buffer, "Nhiet do: %d.%d%\r\n",
+//				u8Buff[2], u8Buff[3]);
             return buffer;
+}
+
+// Hàm này g?i d? l?y s? nguyên nhi?t d?
+uint8_t DHT11_GetTemperature(void) {
+    return dht11_temperature;
+}
+
+// Hàm này g?i d? l?y s? nguyên d? ?m
+uint8_t DHT11_GetHumidity(void) {
+    return dht11_humidity;
 }

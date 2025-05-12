@@ -19,5 +19,8 @@ void HBridge_GPIO_Config(void);
 void Motor_Forward(void);
 void Motor_Backward(void);
 void Motor_Stop(void);
+void Button_GPIO_Config(void);
+void PWM_ControlWithButton(void);
+void Motor_DirectionControlWithButton(void);
 
 #endif

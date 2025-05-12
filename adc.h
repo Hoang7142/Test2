@@ -8,5 +8,6 @@
 
 void ADC_InitConfig(void);
 char* GetDoAmDatString(void);
+uint8_t GetDoAmDatValue(void);
 
 #endif

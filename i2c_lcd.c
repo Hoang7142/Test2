@@ -33,7 +33,7 @@ static void I2C2_Init(void) {
     GPIO_Init(GPIOB, &gpio);
     I2C_DeInit(I2C2); 
     I2C_InitTypeDef i2c;
-    i2c.I2C_ClockSpeed = 100000;
+    i2c.I2C_ClockSpeed = 10000;
     i2c.I2C_Mode = I2C_Mode_I2C;
     i2c.I2C_DutyCycle = I2C_DutyCycle_2;
     i2c.I2C_OwnAddress1 = 0x00;
