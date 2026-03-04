@@ -70,21 +70,21 @@ void Motor_Stop(void) {
     GPIO_ResetBits(GPIOA, GPIO_Pin_4 | GPIO_Pin_5);
 }
 
-// ====== Nút nhấn PB5: Tăng tốc độ PWM ======
+// ====== Nút nhấn PA8: Tăng tốc độ PWM ======
 void Button_GPIO_Config(void) {
     GPIO_InitTypeDef gpioInit;
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
 
-    gpioInit.GPIO_Pin = GPIO_Pin_5 | GPIO_Pin_6;
+    gpioInit.GPIO_Pin = GPIO_Pin_8 | GPIO_Pin_10;
     gpioInit.GPIO_Mode = GPIO_Mode_IPU; // Input pull-up
-    GPIO_Init(GPIOB, &gpioInit);
+    GPIO_Init(GPIOA, &gpioInit);
 }
 
 void PWM_ControlWithButton(void) {
     static uint8_t duty = 0;
     static uint8_t prevStatePB5 = 1;
 
-    uint8_t currStatePB5 = GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_5);
+    uint8_t currStatePB5 = GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_8);
 
     // Cạnh xuống nút PB5: tăng tốc độ
     if (prevStatePB5 == 1 && currStatePB5 == 0) {
@@ -101,9 +101,9 @@ void Motor_DirectionControlWithButton(void) {
     static uint8_t state = 0;
     static uint8_t prevStatePB6 = 1;
 
-    uint8_t currStatePB6 = GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_6);
+    uint8_t currStatePB6 = GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_10);
 
-    // Cạnh xuống nút PB6: chuyển trạng thái
+    // Cạnh xuống nút PA10: chuyển trạng thái
     if (prevStatePB6 == 1 && currStatePB6 == 0) {
         state++;
         if (state > 2) state = 0;

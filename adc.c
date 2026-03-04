@@ -1,5 +1,8 @@
 #include "adc.h"
 #include <stdio.h>
+// C?u hình ngu?ng hi?u chu?n th?c t? (b?n có th? do l?i d? di?u ch?nh cho chính xác)
+#define ADC_KHO 4000  // Giá tr? ADC khi c?m bi?n ? ngoài không khí
+#define ADC_AM  2000  // Giá tr? ADC khi c?m bi?n nhúng vào nu?c
 
 // Kh?i t?o ADC dùng chân PA0 (ADC_Channel_0)
 void ADC_InitConfig(void) {
@@ -35,6 +38,28 @@ void ADC_InitConfig(void) {
     while (ADC_GetCalibrationStatus(ADC1));
 }
 
+//// Ð?c giá tr? ADC
+//static uint16_t ADC_Read(void) {
+//    ADC_SoftwareStartConvCmd(ADC1, ENABLE);
+//    while (!ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC));
+//    return ADC_GetConversionValue(ADC1);
+//}
+
+//// Tr? l?i chu?i d? ?m d?t d?ng "Do am dat: XX%"
+//char* GetDoAmDatString(void) {
+//    static char buf[20];
+//    uint16_t adc_val = ADC_Read();
+//    uint8_t do_am = (uint8_t)((4095 - adc_val) * 100 / 4095);
+//    sprintf(buf, "Do am dat: %d%%", do_am);
+//    return buf;
+//}
+
+//uint8_t GetDoAmDatValue(void) {
+//    uint16_t adc_val = ADC_Read();
+//    uint8_t do_am = (uint8_t)((4095 - adc_val) * 100 / 4095);
+//    return do_am;
+//}
+
 // Ð?c giá tr? ADC
 static uint16_t ADC_Read(void) {
     ADC_SoftwareStartConvCmd(ADC1, ENABLE);
@@ -46,13 +71,22 @@ static uint16_t ADC_Read(void) {
 char* GetDoAmDatString(void) {
     static char buf[20];
     uint16_t adc_val = ADC_Read();
-    uint8_t do_am = (uint8_t)((4095 - adc_val) * 100 / 4095);
+
+    int16_t do_am = (ADC_KHO - adc_val) * 100 / (ADC_KHO - ADC_AM);
+    if (do_am > 100) do_am = 100;
+    if (do_am < 0)   do_am = 0;
+
     sprintf(buf, "Do am dat: %d%%", do_am);
     return buf;
 }
 
+// Tr? l?i giá tr? d? ?m d?t du?i d?ng s? %
 uint8_t GetDoAmDatValue(void) {
     uint16_t adc_val = ADC_Read();
-    uint8_t do_am = (uint8_t)((4095 - adc_val) * 100 / 4095);
-    return do_am;
+
+    int16_t do_am = (ADC_KHO - adc_val) * 100 / (ADC_KHO - ADC_AM);
+    if (do_am > 100) do_am = 100;
+    if (do_am < 0)   do_am = 0;
+
+    return (uint8_t)do_am;
 }

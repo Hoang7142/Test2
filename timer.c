@@ -21,10 +21,10 @@ void TIM4_Init(void)
     // B?t clock cho TIM4
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
 
-    // C?u hình TIM4: d?m lên, 50ms ng?t 1 l?n
+    // C?u hình TIM4: d?m lên, 1000ms ng?t 1 l?n
     timerInit.TIM_CounterMode = TIM_CounterMode_Up;
     timerInit.TIM_Prescaler = 7200 - 1;   // 72MHz / 7200 = 10kHz => 0.1ms/tick
-    timerInit.TIM_Period = 10000 - 1;        // 500 tick = 50ms
+    timerInit.TIM_Period = 10000 - 1;        // 1000 tick = 1000ms
     timerInit.TIM_ClockDivision = TIM_CKD_DIV1;
     timerInit.TIM_RepetitionCounter = 0;
     TIM_TimeBaseInit(TIM4, &timerInit);

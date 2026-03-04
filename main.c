@@ -125,24 +125,24 @@
 //}
 
 
-int main(void) {
-	  TIM2_Init();
-    UART_Init();  
-    Delay_Ms(500);	
-    I2C_LCD_Init();         // Kh?i t?o LCD
-    I2C_LCD_Clear();        // Xóa màn hình
+//int main(void) {
+//	  TIM2_Init();
+//    UART_Init();  
+//    Delay_Ms(500);	
+//    I2C_LCD_Init();         // Kh?i t?o LCD
+//    I2C_LCD_Clear();        // Xóa màn hình
 
-    ADC_InitConfig();       // Kh?i t?o ADC
+//    ADC_InitConfig();       // Kh?i t?o ADC
 
-    while (1) {
-        char* do_am = GetDoAmDatString();  // L?y chu?i d? ?m d?t
-        I2C_LCD_Clear();                   // Xóa LCD
-        I2C_LCD_Puts(do_am);              // In chu?i lên LCD
-        //Delay_Ms(500);                   // Delay 1s
-			  UART_SendString(do_am);
- 	      Delay_Ms(500);
-    }
-}
+//    while (1) {
+//        char* do_am = GetDoAmDatString();  // L?y chu?i d? ?m d?t
+//        I2C_LCD_Clear();                   // Xóa LCD
+//        I2C_LCD_Puts(do_am);              // In chu?i lên LCD
+//        //Delay_Ms(500);                   // Delay 1s
+//			  UART_SendString(do_am);
+// 	      Delay_Ms(500);
+//    }
+//}
 
 
 //int main(void)
@@ -208,64 +208,64 @@ int main(void) {
 
 
 
-//// Dinh nghia cac chan
-//#define MODE_BUTTON_PIN      GPIO_Pin_9  // PA9 lam nut MODE
-//#define MODE_BUTTON_PORT     GPIOA
-//#define MODE_LED_PIN         GPIO_Pin_13 // PC13 lam den bao Mode
-//#define MODE_LED_PORT        GPIOC
+// Dinh nghia cac chan
+#define MODE_BUTTON_PIN      GPIO_Pin_9  // PA9 lam nut MODE
+#define MODE_BUTTON_PORT     GPIOA
+#define MODE_LED_PIN         GPIO_Pin_13 // PC13 lam den bao Mode
+#define MODE_LED_PORT        GPIOC
 
-//// Bien trang thai he thong
-//typedef enum {
-//    MODE_AUTO = 0,
-//    MODE_MANUAL
-//} Mode_t;
+// Bien trang thai he thong
+typedef enum {
+    MODE_AUTO = 0,
+    MODE_MANUAL
+} Mode_t;
 
-//Mode_t current_mode = MODE_AUTO;
-//uint8_t mode_button_prev = 1;
+Mode_t current_mode = MODE_AUTO;
+uint8_t mode_button_prev = 1;
 
-//void System_Init(void) {
-//    TIM2_Init();        // Delay
-//    
-//    UART_Init();        // UART gui thong tin
-//    I2C_LCD_Init();     // LCD I2C
-//    ADC_InitConfig();   // Cam bien do am dat
-//    DHT11_Init();       // DHT11
-//    PWM_GPIO_Config();  // Chan PWM
-//    PWM_Init();         // Timer PWM
-//    HBridge_GPIO_Config(); // Cau H
-//    Button_GPIO_Config();  // 2 nut toc do & chieu quay
+void System_Init(void) {
+    TIM2_Init();        // Delay
+    
+    UART_Init();        // UART gui thong tin
+    I2C_LCD_Init();     // LCD I2C
+    ADC_InitConfig();   // Cam bien do am dat
+    DHT11_Init();       // DHT11
+    PWM_GPIO_Config();  // Chan PWM
+    PWM_Init();         // Timer PWM
+    HBridge_GPIO_Config(); // Cau H
+    Button_GPIO_Config();  // 2 nut toc do & chieu quay
 
-//    // Nut MODE (PA9)
-//    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
-//    GPIO_InitTypeDef gpio;
-//    gpio.GPIO_Mode = GPIO_Mode_IPU;
-//    gpio.GPIO_Pin = MODE_BUTTON_PIN;
-//    gpio.GPIO_Speed = GPIO_Speed_50MHz;
-//    GPIO_Init(MODE_BUTTON_PORT, &gpio);
+    // Nut MODE (PA9)
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+    GPIO_InitTypeDef gpio;
+    gpio.GPIO_Mode = GPIO_Mode_IPU;
+    gpio.GPIO_Pin = MODE_BUTTON_PIN;
+    gpio.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init(MODE_BUTTON_PORT, &gpio);
 
-//    // LED bao che do (PC13)
-//    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
-//    gpio.GPIO_Mode = GPIO_Mode_Out_PP;
-//    gpio.GPIO_Pin = MODE_LED_PIN;
-//    GPIO_Init(MODE_LED_PORT, &gpio);
-//    GPIO_ResetBits(MODE_LED_PORT, MODE_LED_PIN);
+    // LED bao che do (PC13)
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
+    gpio.GPIO_Mode = GPIO_Mode_Out_PP;
+    gpio.GPIO_Pin = MODE_LED_PIN;
+    GPIO_Init(MODE_LED_PORT, &gpio);
+    GPIO_ResetBits(MODE_LED_PORT, MODE_LED_PIN);
 
-//    I2C_LCD_Clear();
-//    I2C_LCD_BackLight(1);
-//		
-//		TIM4_Init();        // Ngat 50ms
-//}
+    I2C_LCD_Clear();
+    I2C_LCD_BackLight(1);
+		
+		TIM4_Init();        // Ngat 50ms
+}
 
-//void Toggle_Mode(void) {
-//    if (current_mode == MODE_AUTO) {
-//        current_mode = MODE_MANUAL;
-//        GPIO_SetBits(MODE_LED_PORT, MODE_LED_PIN);  // Bat LED bao manual
-//    } else {
-//        current_mode = MODE_AUTO;
-//        GPIO_ResetBits(MODE_LED_PORT, MODE_LED_PIN); // Tat LED bao auto
-//    }
-//    Delay_Ms(200); // Chong doi nut
-//}
+void Toggle_Mode(void) {
+    if (current_mode == MODE_AUTO) {
+        current_mode = MODE_MANUAL;
+        GPIO_SetBits(MODE_LED_PORT, MODE_LED_PIN);  // Bat LED bao manual
+    } else {
+        current_mode = MODE_AUTO;
+        GPIO_ResetBits(MODE_LED_PORT, MODE_LED_PIN); // Tat LED bao auto
+    }
+    Delay_Ms(200); // Chong doi nut
+}
 
 //void Auto_Mode_Handler(void) {
 //    DHT11_Check();
@@ -289,56 +289,80 @@ int main(void) {
 //    }
 
 //}
+void Auto_Mode_Handler(void) {
+    DHT11_Check();
+    char* temp_humi = DHT11_Data();
+    char* doam = GetDoAmDatString();
 
-//void Manual_Mode_Handler(void) {
-//    PWM_ControlWithButton();         // Nut tang giam toc do
-//    Motor_DirectionControlWithButton(); // Nut doi chieu quay
-//	  Delay_Ms(20);
+    I2C_LCD_SetCursor(0, 0); // Ðua con tr? v? d?u dòng 1
+    I2C_LCD_Puts(temp_humi);
+    I2C_LCD_Puts("        "); // Xóa ph?n du n?u chu?i tru?c dài hon
 
-//    I2C_LCD_Clear();
-//    I2C_LCD_Puts("Manual Mode");
-//    I2C_LCD_NewLine();
-//    I2C_LCD_Puts("Dieu khien tay");
-//}
+    I2C_LCD_SetCursor(1, 0); // Ðua con tr? v? d?u dòng 2
+    I2C_LCD_Puts(doam);
+    I2C_LCD_Puts("        "); // Xóa ph?n du n?u chu?i tru?c dài hon
 
-//// Ng?t Timer4
-//void TIM4_IRQHandler(void)
-//{
-//    if (TIM_GetITStatus(TIM4, TIM_IT_Update) != RESET)
-//    {
-//        TIM_ClearITPendingBit(TIM4, TIM_IT_Update);
-//        
-////        // Ð?o tr?ng thái LED PC13 m?i 50ms
-//        GPIOC->ODR ^= GPIO_Pin_13;
-//															  // Xu ly nut MODE
-//				uint8_t mode_button_now = GPIO_ReadInputDataBit(MODE_BUTTON_PORT, MODE_BUTTON_PIN);
-//        if (mode_button_prev == 1 && mode_button_now == 0) {
-//            Toggle_Mode();
-//        }
-//        mode_button_prev = mode_button_now;
+    uint8_t temp = DHT11_GetTemperature();
+    uint16_t do_am_dat = GetDoAmDatValue();
 
-//        // Xu ly theo che do
-//        if (current_mode == MODE_AUTO) 
-//				{
-//            Auto_Mode_Handler();
-//        } 
-//				else 
-//				{
-//            Manual_Mode_Handler();
-//        }
-////        Delay_Ms(1000);
-//			
-//    }
-//}
+    if (temp > 20 && do_am_dat < 60) {
+        Motor_Forward();
+        PWM_SetDutyCycle(80); // M? bom t?c d? cao
+    }
+    else if (do_am_dat > 40) {
+        PWM_SetDutyCycle(0);
+    }
+}
 
-//int main(void) {
-//    System_Init();
-//    while (1) {
+void Manual_Mode_Handler(void) {
+    PWM_ControlWithButton();         // Nut tang giam toc do
+    Motor_DirectionControlWithButton(); // Nut doi chieu quay
+	  Delay_Ms(20);
+
+    I2C_LCD_Clear();
+    I2C_LCD_Puts("Manual Mode");
+    I2C_LCD_NewLine();
+    I2C_LCD_Puts("Dieu khien tay");
+}
+
+// Ng?t Timer4
+void TIM4_IRQHandler(void)
+{
+    if (TIM_GetITStatus(TIM4, TIM_IT_Update) != RESET)
+    {
+        TIM_ClearITPendingBit(TIM4, TIM_IT_Update);
+        
+//        // Ð?o tr?ng thái LED PC13 m?i 50ms
+        GPIOC->ODR ^= GPIO_Pin_13;
+															  // Xu ly nut MODE
+				uint8_t mode_button_now = GPIO_ReadInputDataBit(MODE_BUTTON_PORT, MODE_BUTTON_PIN);
+        if (mode_button_prev == 1 && mode_button_now == 0) {
+            Toggle_Mode();
+        }
+        mode_button_prev = mode_button_now;
+
+        // Xu ly theo che do
+        if (current_mode == MODE_AUTO) 
+				{
+            Auto_Mode_Handler();
+        } 
+				else 
+				{
+            Manual_Mode_Handler();
+        }
+//        Delay_Ms(1000);
+			
+    }
+}
+
+int main(void) {
+    System_Init();
+    while (1) {
 
 
 
-//    }
-//}
+    }
+}
 
 
 

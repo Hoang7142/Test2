@@ -147,3 +147,15 @@ void I2C_LCD_BackLight(uint8_t u8BackLight) {
     I2C_LCD_FlushVal();
 }
 
+void I2C_LCD_SetCursor(uint8_t row, uint8_t col) {
+    uint8_t address = 0x80; // Ð?a ch? DDRAM m?c d?nh
+
+    if (row == 0) {
+        address += col; // Dòng 1 b?t d?u t? 0x80
+    } else if (row == 1) {
+        address += 0x40 + col; // Dòng 2 b?t d?u t? 0xC0 (0x80 + 0x40)
+    }
+
+    I2C_LCD_WriteCmd(address);
+}
+

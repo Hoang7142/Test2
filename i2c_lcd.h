@@ -12,5 +12,6 @@ void I2C_LCD_Puts(char *szStr);
 void I2C_LCD_Clear(void);
 void I2C_LCD_NewLine(void);
 void I2C_LCD_BackLight(uint8_t u8BackLight);
+void I2C_LCD_SetCursor(uint8_t row, uint8_t col);
 
 #endif
