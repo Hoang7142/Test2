@@ -1,6 +1,6 @@
 #include "pwm.h"
 
-// GPIO cấu hình PWM tại PB4 (TIM3_CH1)
+// GPIO cấu hình PWM tại PA6 (TIM3_CH1)
 void PWM_GPIO_Config(void) {
     GPIO_InitTypeDef gpioInit;
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
@@ -96,7 +96,7 @@ void PWM_ControlWithButton(void) {
     prevStatePB5 = currStatePB5;
 }
 
-// ====== Nút nhấn PB6: Điều khiển chiều quay và dừng ======
+// ====== Nút nhấn PA6: Điều khiển chiều quay và dừng ======
 void Motor_DirectionControlWithButton(void) {
     static uint8_t state = 0;
     static uint8_t prevStatePB6 = 1;

@@ -146,6 +146,19 @@ void I2C_LCD_BackLight(uint8_t u8BackLight) {
     u8LCD_Buff[LCD_BL] = u8BackLight ? 1 : 0;
     I2C_LCD_FlushVal();
 }
+//void I2C_LCD_BackLight(uint8_t u8BackLight) {
+//    // Kiem tra dieu kien de bat hoac tat den nen
+//    if (u8BackLight != 0) {
+//        // Neu gia tri khac 0 thi gan bien den nen bang 1 (Bat den)
+//        u8LCD_Buff[LCD_BL] = 1;
+//    } else {
+//        // Neu gia tri bang 0 thi gan bien den nen bang 0 (Tat den)
+//        u8LCD_Buff[LCD_BL] = 0;
+//    }
+//    
+//    // Goi ham day du lieu tu buffer ra module I2C de hien thi
+//    I2C_LCD_FlushVal();
+//}
 
 void I2C_LCD_SetCursor(uint8_t row, uint8_t col) {
     uint8_t address = 0x80; // Ð?a ch? DDRAM m?c d?nh
