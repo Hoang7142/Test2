@@ -226,8 +226,8 @@
 //    SPI_InitStructure.SPI_CPHA = SPI_CPHA_1Edge;
 //    SPI_InitStructure.SPI_NSS = SPI_NSS_Soft;
 //    
-//    // ÐÃ S?A: Tang b? chia t? 8 lên 32 d? h? t?c d? Clock t? 12MHz xu?ng còn 3MHz
-//    // Ð?m b?o chip LoRa SX1278 có th? d?c k?p tín hi?u.
+//    // ï¿½ï¿½ S?A: Tang b? chia t? 8 lï¿½n 32 d? h? t?c d? Clock t? 12MHz xu?ng cï¿½n 3MHz
+//    // ï¿½?m b?o chip LoRa SX1278 cï¿½ th? d?c k?p tï¿½n hi?u.
 //    SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_256; 
 //    
 //    SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_MSB;
@@ -264,11 +264,11 @@
 //void LoRa_Write_Reg(uint8_t reg, uint8_t data) {
 //    GPIO_ResetBits(LORA_NSS_PORT, LORA_NSS_PIN);
 //    
-//    // gi? nguyên delay c?a b?n
+//    // T?o d? tr? nh? d? NSS ?n d?nh
 //    for(volatile int i = 0; i < 200; i++); 
 
-//    // ? FIX: WRITE -> bit7 = 0
-//    SPI_Transfer(reg & 0x7F);
+//    // NG: Ghi th bit 7 ph?i l 1 (dng | 0x80)
+//    SPI_Transfer(reg | 0x80); 
 //    SPI_Transfer(data);
 
 //    GPIO_SetBits(LORA_NSS_PORT, LORA_NSS_PIN);
@@ -279,15 +279,16 @@
 
 //    GPIO_ResetBits(LORA_NSS_PORT, LORA_NSS_PIN);
 //    
-//    // gi? nguyên delay c?a b?n
+//    // T?o d? tr? nh?
 //    for(volatile int i = 0; i < 200; i++); 
 
-//    // ? FIX: READ -> bit7 = 1
-//    SPI_Transfer(reg | 0x80);
-//    
-//    // gi? nguyên delay c?a b?n
+//    // NG:?c th bit 7 ph?i l 0 (dng & 0x7F)
+//    SPI_Transfer(reg & 0x7F); 
+    
+//    // T?o d? tr? d? chip chu?n b? d? li?u
 //    for(volatile int i = 0; i < 200; i++); 
 
+//    // G?i 0x00 d? t?o xung clock l?y d? li?u v?
 //    val = SPI_Transfer(0x00);
 
 //    GPIO_SetBits(LORA_NSS_PORT, LORA_NSS_PIN);
@@ -363,6 +364,8 @@ void LoRa_SPI_Init(void) {
     GPIO_InitTypeDef GPIO_InitStructure;
     SPI_InitTypeDef  SPI_InitStructure;
 
+    RCC_PCLK2Config(RCC_HCLK_Div8); // Chia tan so clock PCLK2 xuong 4MHz
+
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_SPI1, ENABLE);
 
     // PA5: SCK, PA7: MOSI
@@ -373,7 +376,7 @@ void LoRa_SPI_Init(void) {
 
     // PA6: MISO
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6; 
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING; 	 
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING; 
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 
     // PA4: NSS (Soft CS) - Phai keo len CAO ngay lap tuc
@@ -389,9 +392,7 @@ void LoRa_SPI_Init(void) {
     SPI_InitStructure.SPI_CPHA = SPI_CPHA_1Edge;
     SPI_InitStructure.SPI_NSS = SPI_NSS_Soft;
     
-    // ÐÃ S?A: Tang b? chia t? 8 lên 32 d? h? t?c d? Clock t? 12MHz xu?ng còn 3MHz
-    // Ð?m b?o chip LoRa SX1278 có th? d?c k?p tín hi?u.
-    SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_256; 
+    SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_128; 
     
     SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_MSB;
     SPI_Init(SPI1, &SPI_InitStructure);
@@ -417,45 +418,43 @@ void LoRa_Reset(void) {
 
 // --- HAM TRUYEN NHAN SPI NOI BO ---
 static uint8_t SPI_Transfer(uint8_t data) {
-    while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
+    uint16_t timeout = 1000;  // Arbitrary timeout value
+    while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET && --timeout);
+    if (timeout == 0) return 0xFF;  // Error indicator
     SPI_I2S_SendData(SPI1, data);
-    while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_RXNE) == RESET);
+    
+    timeout = 1000;
+    while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_RXNE) == RESET && --timeout);
+    if (timeout == 0) return 0xFF;
     return SPI_I2S_ReceiveData(SPI1);
 }
 
-// --- HÀM GHI THANH GHI (WRITE) ---
+// --- Hï¿½M GHI THANH GHI (WRITE) ---
 void LoRa_Write_Reg(uint8_t reg, uint8_t data) {
     GPIO_ResetBits(LORA_NSS_PORT, LORA_NSS_PIN); // Ch?n chip
     
     // T?o d? tr? nh? d? NSS ?n d?nh
     for(volatile int i = 0; i < 200; i++); 
 
-    // ÐÚNG: Ghi thì bit 7 ph?i là 1 (dùng | 0x80)
+    // ï¿½ï¿½NG: Ghi thï¿½ bit 7 ph?i lï¿½ 1 (dï¿½ng | 0x80)
     SPI_Transfer(reg | 0x80); 
     SPI_Transfer(data);
 
     GPIO_SetBits(LORA_NSS_PORT, LORA_NSS_PIN); // B? ch?n chip
 }
 
-// --- HÀM Ð?C THANH GHI (READ) ---
+// --- Hï¿½M ï¿½?C THANH GHI (READ) ---
 uint8_t LoRa_Read_Reg(uint8_t reg) {
     uint8_t val;
 
-    GPIO_ResetBits(LORA_NSS_PORT, LORA_NSS_PIN); // Ch?n chip
-    
-    // T?o d? tr? nh?
-    for(volatile int i = 0; i < 200; i++); 
+    GPIO_ResetBits(LORA_NSS_PORT, LORA_NSS_PIN);
+    Delay_Ms(1);
 
-    // ÐÚNG: Ð?c thì bit 7 ph?i là 0 (dùng & 0x7F)
-    SPI_Transfer(reg & 0x7F); 
-    
-    // T?o d? tr? d? chip chu?n b? d? li?u
-    for(volatile int i = 0; i < 200; i++); 
-
-    // G?i 0x00 d? t?o xung clock l?y d? li?u v?
+    SPI_Transfer(reg & 0x7F);
     val = SPI_Transfer(0x00);
 
-    GPIO_SetBits(LORA_NSS_PORT, LORA_NSS_PIN); // B? ch?n chip
+    Delay_Ms(1);
+    GPIO_SetBits(LORA_NSS_PORT, LORA_NSS_PIN);
 
     return val;
 }
