@@ -54,39 +54,36 @@ void UART_SendString(char *s) {
     while (*s) UART_SendChar(*s++);
 }
 
-// ===== MAIN =====
-int main(void) {
-    //SystemInit();
+void LED_Init(void) {
     GPIO_InitTypeDef gpioInit;
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
     gpioInit.GPIO_Mode = GPIO_Mode_Out_PP;
     gpioInit.GPIO_Pin = GPIO_Pin_13;
     gpioInit.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init(GPIOC, &gpioInit);
-
     GPIO_ResetBits(GPIOC, GPIO_Pin_13);
+}
 
+void LED_Blink(void) {
+    if (GPIO_ReadOutputDataBit(GPIOC, GPIO_Pin_13) == SET) {
+        GPIO_ResetBits(GPIOC, GPIO_Pin_13);
+    } else {
+        GPIO_SetBits(GPIOC, GPIO_Pin_13);
+    }
+}
 
+// ===== MAIN =====
+int main(void) {
+    LED_Init();
     char buf[64];
     uint8_t ver;
 
     TIM2_Init();
     UART1_Init(115200);
-
-    
-
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
-    gpioInit.GPIO_Mode = GPIO_Mode_Out_PP;
-    gpioInit.GPIO_Pin = GPIO_Pin_13;
-    gpioInit.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_Init(GPIOC, &gpioInit);
-
     UART_SendString("\r\n===== TEST SPI LORA =====\r\n");
-    
+
     // Init SPI + LoRa
     LoRa_SPI_Init();
-    
-
     Delay_Ms(50);
 
     while (1) 
@@ -97,7 +94,7 @@ int main(void) {
 // d?c nhi?u l?n cho ch?c
         for (int i = 0; i < 5; i++) {
 
-            GPIOC->ODR ^= GPIO_Pin_13;
+            LED_Blink();
             
             // 1. TH�M "BREAKPOINT" V�O ��Y: Ngh? 1 gi�y tru?c khi d?c
             Delay_Ms(500); 
