@@ -6,7 +6,7 @@ void TIM2_Init(void)
     
     timerInit.TIM_CounterMode = TIM_CounterMode_Up;
     timerInit.TIM_Period = 0xFFFF;
-    timerInit.TIM_Prescaler = 72 - 1;
+    timerInit.TIM_Prescaler = 36 - 1;
     TIM_TimeBaseInit(TIM2, &timerInit);
 	  //TIM_ClearFlag(TIM2, TIM_FLAG_Update);
     TIM_Cmd(TIM2, ENABLE);
@@ -21,9 +21,9 @@ void TIM4_Init(void)
     // B?t clock cho TIM4
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
 
-    // C?u hình TIM4: d?m lên, 1000ms ng?t 1 l?n
+    // C?u hï¿½nh TIM4: d?m lï¿½n, 1000ms ng?t 1 l?n
     timerInit.TIM_CounterMode = TIM_CounterMode_Up;
-    timerInit.TIM_Prescaler = 7200 - 1;   // 72MHz / 7200 = 10kHz => 0.1ms/tick
+    timerInit.TIM_Prescaler = 3600 - 1;   // 36MHz / 3600 = 10kHz => 0.1ms/tick
     timerInit.TIM_Period = 10000 - 1;        // 1000 tick = 1000ms
     timerInit.TIM_ClockDivision = TIM_CKD_DIV1;
     timerInit.TIM_RepetitionCounter = 0;
@@ -35,7 +35,7 @@ void TIM4_Init(void)
     // Enable ng?t update
     TIM_ITConfig(TIM4, TIM_IT_Update, ENABLE);
 
-    // C?u hình NVIC cho TIM4
+    // C?u hï¿½nh NVIC cho TIM4
     nvicInit.NVIC_IRQChannel = TIM4_IRQn;
     nvicInit.NVIC_IRQChannelPreemptionPriority = 1;
     nvicInit.NVIC_IRQChannelSubPriority = 1;

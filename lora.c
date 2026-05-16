@@ -364,7 +364,7 @@ void LoRa_SPI_Init(void) {
     GPIO_InitTypeDef GPIO_InitStructure;
     SPI_InitTypeDef  SPI_InitStructure;
 
-    RCC_PCLK2Config(RCC_HCLK_Div8); // Chia tan so clock PCLK2 xuong 4MHz
+    // RCC_PCLK2Config(RCC_HCLK_Div8); // Chia tan so clock PCLK2 xuong 4MHz
 
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_SPI1, ENABLE);
 
