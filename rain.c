@@ -40,3 +40,4 @@ char* Rain_String(void)
 
     return buf;
 }
+

@@ -270,8 +270,8 @@
 //			while (1) {
 //			}
 //		}
-//		dht11_humidity = u8Buff[0];     // Ð? ?m nguyên ph?n
-//    dht11_temperature = u8Buff[2];  // Nhi?t d? nguyên ph?n
+//		dht11_humidity = u8Buff[0];     // ï¿½? ?m nguyï¿½n ph?n
+//    dht11_temperature = u8Buff[2];  // Nhi?t d? nguyï¿½n ph?n
 //		sprintf(buffer, "ND:%d.%d, DA:%d.%d%%\r\n",
 //				u8Buff[2], u8Buff[3], u8Buff[0], u8Buff[1]);
 ////		sprintf(buffer, "Nhiet do: %d.%d%\r\n",
@@ -279,12 +279,12 @@
 //            return buffer;
 //}
 
-//// Hàm này g?i d? l?y s? nguyên nhi?t d?
+//// Hï¿½m nï¿½y g?i d? l?y s? nguyï¿½n nhi?t d?
 //uint8_t DHT11_GetTemperature(void) {
 //    return dht11_temperature;
 //}
 
-//// Hàm này g?i d? l?y s? nguyên d? ?m
+//// Hï¿½m nï¿½y g?i d? l?y s? nguyï¿½n d? ?m
 //uint8_t DHT11_GetHumidity(void) {
 //    return dht11_humidity;
 //}
