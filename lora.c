@@ -1,517 +1,395 @@
-//#include "lora.h"
-//#include "delay.h" // De dung ham Delay_Ms cho khoi tao
-
-//// Ham khoi tao SPI1 va cac chan dieu khien LoRa
-//void LoRa_SPI_Init(void) {
-//    GPIO_InitTypeDef GPIO_InitStructure;
-//    SPI_InitTypeDef  SPI_InitStructure;
-
-//    // Cap xung nhip cho GPIOA, GPIOB va SPI1
-//    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB | RCC_APB2Periph_SPI1, ENABLE);
-
-//    // Cau hinh chan SCK (PA5) va MOSI (PA7) la Alternate Function Push-Pull de SPI dieu khien
-//    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5 | GPIO_Pin_7;
-//    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
-//    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-//    GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-//    // Cau hinh chan MISO (PA6) la Input Floating de nhan du lieu
-//    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
-//    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-//    GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-//    // Cau hinh chan NSS (PA4) la Output Push-Pull dieu khien chon chip bang phan mem
-//    GPIO_InitStructure.GPIO_Pin = LORA_NSS_PIN;
-//    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-//    GPIO_Init(LORA_NSS_PORT, &GPIO_InitStructure);
-
-//    // Cau hinh chan DIO0 (PB5) la Input Pull-down de kiem tra ngat/polling
-//    GPIO_InitStructure.GPIO_Pin = LORA_DIO0_PIN;
-//    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
-//    GPIO_Init(LORA_DIO0_PORT, &GPIO_InitStructure);
-
-//    // Keo chan NSS len muc cao (Khong chon chip LoRa luc moi khoi dong)
-//    GPIO_SetBits(LORA_NSS_PORT, LORA_NSS_PIN);
-
-//    // Cau hinh thong so cho SPI1
-//    SPI_InitStructure.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
-//    SPI_InitStructure.SPI_Mode = SPI_Mode_Master;
-//    SPI_InitStructure.SPI_DataSize = SPI_DataSize_8b;
-//    SPI_InitStructure.SPI_CPOL = SPI_CPOL_Low;
-//    SPI_InitStructure.SPI_CPHA = SPI_CPHA_1Edge;
-//    SPI_InitStructure.SPI_NSS = SPI_NSS_Soft; // Dung phan mem dieu khien chan NSS
-//    SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_8; // Chia tan so clock SPI
-//    SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_MSB;
-//    SPI_InitStructure.SPI_CRCPolynomial = 7;
-//    SPI_Init(SPI1, &SPI_InitStructure);
-
-//    // Kich hoat SPI1 hoat dong
-//    SPI_Cmd(SPI1, ENABLE);
-//}
-
-//// Ham noi bo de truyen va nhan 1 byte qua SPI
-//static uint8_t SPI_Transfer(uint8_t data) {
-//    // Cho den khi buffer truyen san sang
-//    while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
-//    // Gui 1 byte du lieu di
-//    SPI_I2S_SendData(SPI1, data);
-//    
-//    // Cho den khi nhan duoc 1 byte du lieu ve
-//    while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_RXNE) == RESET);
-//    // Tra ve byte nhan duoc
-//    return SPI_I2S_ReceiveData(SPI1);
-//}
-
-//// Ham ghi du lieu vao thanh ghi cua LoRa
-//void LoRa_Write_Reg(uint8_t reg, uint8_t data) {
-//    // Keo NSS xuong muc thap de chon chip LoRa
-//    GPIO_ResetBits(LORA_NSS_PORT, LORA_NSS_PIN);
-//    
-//    // Gui dia chi thanh ghi (Bit MSB bang 1 de bao hieu lenh Ghi)
-//    SPI_Transfer(reg | 0x80);
-//    // Gui du lieu can ghi vao
-//    SPI_Transfer(data);
-//    
-//    // Keo NSS len muc cao de ket thuc giao tiep voi chip
-//    GPIO_SetBits(LORA_NSS_PORT, LORA_NSS_PIN);
-//}
-
-//// Ham doc du lieu tu thanh ghi cua LoRa
-//uint8_t LoRa_Read_Reg(uint8_t reg) {
-//    uint8_t val;
-//    
-//    // Keo NSS xuong muc thap de chon chip LoRa
-//    GPIO_ResetBits(LORA_NSS_PORT, LORA_NSS_PIN);
-//    
-//    // Gui dia chi thanh ghi (Bit MSB bang 0 de bao hieu lenh Doc)
-//    SPI_Transfer(reg & 0x7F);
-//    // Gui ma byte 0x00 de tao xung clock day du lieu tu LoRa ve STM32
-//    val = SPI_Transfer(0x00);
-//    
-//    // Keo NSS len muc cao de ket thuc giao tiep voi chip
-//    GPIO_SetBits(LORA_NSS_PORT, LORA_NSS_PIN);
-//    
-//    return val;
-//}
-
-//// Ham khoi tao thong so ban dau cho LoRa (Tan so 433MHz, cong suat phat)
-//uint8_t LoRa_Init(void) {
-//    // Goi ham khoi tao SPI truoc
-//    LoRa_SPI_Init();
-
-//    // Chuyen LoRa ve che do Sleep de kich hoat che do LoRa mode
-//    LoRa_Write_Reg(LORA_REG_OP_MODE, LORA_MODE_SLEEP);
-//    Delay_Ms(10); 
-
-//    // Bat che do LoRa va giu o che do Sleep
-//    LoRa_Write_Reg(LORA_REG_OP_MODE, LORA_MODE_SLEEP | LORA_LONG_RANGE_MODE);
-//    Delay_Ms(10);
-
-//    // Kiem tra ket noi SPI voi chip bang cach doc thanh ghi Version (Thuong la 0x12)
-//    uint8_t version = LoRa_Read_Reg(LORA_REG_VERSION);
-//    if (version == 0x00 || version == 0xFF) {
-//        return 0; // Loi khong ket noi duoc SPI hoac LoRa hong
-//    }
-
-//    // Cau hinh tan so 433 MHz (Frf = 433MHz / (32MHz / 2^19) = 0x6C4000)
-//    LoRa_Write_Reg(LORA_REG_FRF_MSB, 0x6C);
-//    LoRa_Write_Reg(LORA_REG_FRF_MID, 0x40);
-//    LoRa_Write_Reg(LORA_REG_FRF_LSB, 0x00);
-
-//    // Cau hinh cong suat phat toi da dung chan PA_BOOST
-//    LoRa_Write_Reg(LORA_REG_PA_CONFIG, 0xCF);
-
-//    // Chuyen sang che do Standby de san sang truyen nhan
-//    LoRa_Write_Reg(LORA_REG_OP_MODE, LORA_MODE_STANDBY | LORA_LONG_RANGE_MODE);
-
-//    return 1; // Khoi tao thanh cong
-//}
-
-//// Ham phat du lieu di
-//void LoRa_Transmit(uint8_t *data, uint8_t length) {
-//    // Chuyen ve che do Standby de nap du lieu
-//    LoRa_Write_Reg(LORA_REG_OP_MODE, LORA_MODE_STANDBY | LORA_LONG_RANGE_MODE);
-
-//    // Chi dinh con tro FIFO ve dung dia chi co so cua bo dem TX
-//    LoRa_Write_Reg(LORA_REG_FIFO_ADDR_PTR, LoRa_Read_Reg(LORA_REG_FIFO_TX_BASE_ADDR));
-
-//    // Cau hinh so luong byte can truyen
-//    LoRa_Write_Reg(LORA_REG_PAYLOAD_LENGTH, length);
-
-//    // Dua tung byte du lieu vao bo dem FIFO cua LoRa
-//    for (uint8_t i = 0; i < length; i++) {
-//        LoRa_Write_Reg(LORA_REG_FIFO, data[i]);
-//    }
-
-//    // Chuyen LoRa sang che do TX de bat dau phat
-//    LoRa_Write_Reg(LORA_REG_OP_MODE, LORA_MODE_TX | LORA_LONG_RANGE_MODE);
-
-//    // Cho den khi phat xong bang cach doc co ngat TxDone (Bit 3) trong thanh ghi IRQ
-//    while ((LoRa_Read_Reg(LORA_REG_IRQ_FLAGS) & 0x08) == 0) {
-//        // Vong lap cho phat xong
-//    }
-
-//    // Xoa co ngat TxDone sau khi phat xong bang cach ghi so 1 vao chinh no
-//    LoRa_Write_Reg(LORA_REG_IRQ_FLAGS, 0x08);
-//}
-
-//// Ham dat LoRa vao che do luon lang nghe du lieu toi
-//void LoRa_Start_Receive(void) {
-//    LoRa_Write_Reg(LORA_REG_OP_MODE, LORA_MODE_RX_CONTINUOUS | LORA_LONG_RANGE_MODE);
-//}
-
-//// Ham kiem tra va doc du lieu nhan duoc (Polling)
-//uint8_t LoRa_Receive(uint8_t *data) {
-//    // Doc thanh ghi ngat xem co co RxDone (Bit 6) bat len khong
-//    uint8_t irqFlags = LoRa_Read_Reg(LORA_REG_IRQ_FLAGS);
-
-//    if ((irqFlags & 0x40) != 0) {
-//        // Da co du lieu den, tien hanh xoa co ngat RxDone
-//        LoRa_Write_Reg(LORA_REG_IRQ_FLAGS, 0x40);
-
-//        // Doc xem nhan duoc bao nhieu byte
-//        uint8_t length = LoRa_Read_Reg(LORA_REG_RX_NB_BYTES);
-
-//        // Di chuyen con tro FIFO den dung vi tri du lieu vua nhan duoc
-//        LoRa_Write_Reg(LORA_REG_FIFO_ADDR_PTR, LoRa_Read_Reg(LORA_REG_FIFO_RX_CURRENT_ADDR));
-
-//        // Doc lay tung byte du lieu tu FIFO luu vao mang
-//        for (uint8_t i = 0; i < length; i++) {
-//            data[i] = LoRa_Read_Reg(LORA_REG_FIFO);
-//        }
-
-//        return length; // Tra ve so luong byte lay duoc
-//    }
-
-//    return 0; // Khong co du lieu moi
-//}
-
-
-//#include "lora.h"
-//#include "delay.h"
-//#include <string.h>
-
-//// Dinh nghia chan Reset PA3
-//#define LORA_RST_PORT  GPIOA
-//#define LORA_RST_PIN   GPIO_Pin_3
-
-//// --- HAM KHOI TAO SPI ---
-//void LoRa_SPI_Init(void) {
-//    GPIO_InitTypeDef GPIO_InitStructure;
-//    SPI_InitTypeDef  SPI_InitStructure;
-
-//    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_SPI1, ENABLE);
-
-//    // PA5: SCK, PA7: MOSI
-//    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5 | GPIO_Pin_7; 
-//    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
-//    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-//    GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-//    // PA6: MISO
-//    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6; 
-//    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING; 
-//    GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-//    // PA4: NSS (Soft CS) - Phai keo len CAO ngay lap tuc
-//    GPIO_InitStructure.GPIO_Pin = LORA_NSS_PIN; 
-//    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-//    GPIO_Init(LORA_NSS_PORT, &GPIO_InitStructure);
-//    GPIO_SetBits(LORA_NSS_PORT, LORA_NSS_PIN); // MAC DINH LA CAO (Khong chon chip)
-
-//    SPI_InitStructure.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
-//    SPI_InitStructure.SPI_Mode = SPI_Mode_Master;
-//    SPI_InitStructure.SPI_DataSize = SPI_DataSize_8b;
-//    SPI_InitStructure.SPI_CPOL = SPI_CPOL_Low;
-//    SPI_InitStructure.SPI_CPHA = SPI_CPHA_1Edge;
-//    SPI_InitStructure.SPI_NSS = SPI_NSS_Soft;
-//    
-//    // �� S?A: Tang b? chia t? 8 l�n 32 d? h? t?c d? Clock t? 12MHz xu?ng c�n 3MHz
-//    // �?m b?o chip LoRa SX1278 c� th? d?c k?p t�n hi?u.
-//    SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_256; 
-//    
-//    SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_MSB;
-//    SPI_Init(SPI1, &SPI_InitStructure);
-//    SPI_Cmd(SPI1, ENABLE);
-//}
-
-//// --- HAM RESET ---
-//void LoRa_Reset(void) {
-//    GPIO_InitTypeDef GPIO_InitStructure;
-//    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
-//    
-//    GPIO_InitStructure.GPIO_Pin = LORA_RST_PIN;
-//    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-//    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-//    GPIO_Init(LORA_RST_PORT, &GPIO_InitStructure);
-
-//    // Chu trinh keo RST: Thap (10ms) -> Cao (10ms)
-//    GPIO_ResetBits(LORA_RST_PORT, LORA_RST_PIN);
-//    Delay_Ms(20);
-//    GPIO_SetBits(LORA_RST_PORT, LORA_RST_PIN);
-//    Delay_Ms(20);
-//}
-
-//// --- HAM TRUYEN NHAN SPI NOI BO ---
-//static uint8_t SPI_Transfer(uint8_t data) {
-//    while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
-//    SPI_I2S_SendData(SPI1, data);
-//    while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_RXNE) == RESET);
-//    return SPI_I2S_ReceiveData(SPI1);
-//}
-
-//// --- CAC HAM DOC/GHI THANH GHI ---
-//void LoRa_Write_Reg(uint8_t reg, uint8_t data) {
-//    GPIO_ResetBits(LORA_NSS_PORT, LORA_NSS_PIN);
-//    
-//    // T?o d? tr? nh? d? NSS ?n d?nh
-//    for(volatile int i = 0; i < 200; i++); 
-
-//    // NG: Ghi th bit 7 ph?i l 1 (dng | 0x80)
-//    SPI_Transfer(reg | 0x80); 
-//    SPI_Transfer(data);
-
-//    GPIO_SetBits(LORA_NSS_PORT, LORA_NSS_PIN);
-//}
-
-//uint8_t LoRa_Read_Reg(uint8_t reg) {
-//    uint8_t val;
-
-//    GPIO_ResetBits(LORA_NSS_PORT, LORA_NSS_PIN);
-//    
-//    // T?o d? tr? nh?
-//    for(volatile int i = 0; i < 200; i++); 
-
-//    // NG:?c th bit 7 ph?i l 0 (dng & 0x7F)
-//    SPI_Transfer(reg & 0x7F); 
-    
-//    // T?o d? tr? d? chip chu?n b? d? li?u
-//    for(volatile int i = 0; i < 200; i++); 
-
-//    // G?i 0x00 d? t?o xung clock l?y d? li?u v?
-//    val = SPI_Transfer(0x00);
-
-//    GPIO_SetBits(LORA_NSS_PORT, LORA_NSS_PIN);
-
-//    return val;
-//}
-
-//// --- HAM KHOI TAO CHINH ---
-//uint8_t LoRa_Init(void) {
-//    // 1. KHOI TAO SPI TRUOC DE CHAN NSS ON DINH
-//    LoRa_SPI_Init(); 
-//    
-//    // 2. RESET MODULE
-//    LoRa_Reset();    
-//    
-//    // 3. CAU HINH MODULE
-//    LoRa_Write_Reg(REG_OP_MODE, 0x00); // Sleep mode
-//    Delay_Ms(10);
-//    LoRa_Write_Reg(REG_OP_MODE, 0x80); // Chuyen sang LoRa Mode
-//    Delay_Ms(10);
-//    
-//    // Kiem tra Version
-//    if (LoRa_Read_Reg(REG_VERSION) != 0x12) {
-//        return 0; // That bai
-//    }
-
-//    // Dat tan so 433MHz
-//    LoRa_Write_Reg(REG_FRF_MSB, 0x6C);
-//    LoRa_Write_Reg(REG_FRF_MID, 0x40);
-//    LoRa_Write_Reg(REG_FRF_LSB, 0x00);
-
-//    // Kich cong suat phat (Tuy chon)
-//    LoRa_Write_Reg(REG_PA_CONFIG, 0xFF); 
-
-//    // Dong bo hoa voi ESP32 (Gia tri 0xF1)
-//    LoRa_Write_Reg(REG_SYNC_WORD, 0xF1);
-
-//    // Chuyen ve Standby Mode de san sang hoat dong
-//    LoRa_Write_Reg(REG_OP_MODE, 0x81);
-//    return 1;
-//}
-
-//// --- HAM GUI CHUOI KY TU ---
-//void LoRa_SendString(char* str) {
-//    uint8_t len = strlen(str);
-//    LoRa_Write_Reg(REG_OP_MODE, 0x81); // Standby
-//    LoRa_Write_Reg(REG_FIFO_ADDR_PTR, LoRa_Read_Reg(REG_FIFO_TX_BASE));
-//    LoRa_Write_Reg(REG_PAYLOAD_LENGTH, len);
-//    for (uint8_t i = 0; i < len; i++) {
-//        LoRa_Write_Reg(REG_FIFO, (uint8_t)str[i]);
-//    }
-//    LoRa_Write_Reg(REG_OP_MODE, 0x83); // TX Mode
-//    
-//    // Cho den khi phat xong
-//    while ((LoRa_Read_Reg(REG_IRQ_FLAGS) & 0x08) == 0);
-//    
-//    // Xoa co ngat
-//    LoRa_Write_Reg(REG_IRQ_FLAGS, 0x08);
-//}
-
-
-
 #include "lora.h"
 #include "delay.h"
+#include "misc.h"
+#include "stm32f10x_exti.h"
+#include "stm32f10x_gpio.h"
+#include "stm32f10x_rcc.h"
 #include <string.h>
 
-// Dinh nghia chan Reset PA3
-#define LORA_RST_PORT  GPIOA
-#define LORA_RST_PIN   GPIO_Pin_3
+static LoRa_Config_t lora_cfg;
+static volatile uint8_t lora_rx_done_pending = 0;
 
-// --- HAM KHOI TAO SPI ---
-void LoRa_SPI_Init(void) {
-    GPIO_InitTypeDef GPIO_InitStructure;
-    SPI_InitTypeDef  SPI_InitStructure;
-
-    // RCC_PCLK2Config(RCC_HCLK_Div8); // Chia tan so clock PCLK2 xuong 4MHz
-
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_SPI1, ENABLE);
-
-    // PA5: SCK, PA7: MOSI
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5 | GPIO_Pin_7; 
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-    // PA6: MISO
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6; 
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING; 
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-    // PA4: NSS (Soft CS) - Phai keo len CAO ngay lap tuc
-    GPIO_InitStructure.GPIO_Pin = LORA_NSS_PIN; 
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-    GPIO_Init(LORA_NSS_PORT, &GPIO_InitStructure);
-    GPIO_SetBits(LORA_NSS_PORT, LORA_NSS_PIN); // MAC DINH LA CAO (Khong chon chip)
-
-    SPI_InitStructure.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
-    SPI_InitStructure.SPI_Mode = SPI_Mode_Master;
-    SPI_InitStructure.SPI_DataSize = SPI_DataSize_8b;
-    SPI_InitStructure.SPI_CPOL = SPI_CPOL_Low;
-    SPI_InitStructure.SPI_CPHA = SPI_CPHA_1Edge;
-    SPI_InitStructure.SPI_NSS = SPI_NSS_Soft;
-    
-    SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_128; 
-    
-    SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_MSB;
-    SPI_Init(SPI1, &SPI_InitStructure);
-    SPI_Cmd(SPI1, ENABLE);
+static void LoRa_NSS(uint8_t select)
+{
+    if (select)
+        GPIO_SetBits(LORA_NSS_PORT, LORA_NSS_PIN);
+    else
+        GPIO_ResetBits(LORA_NSS_PORT, LORA_NSS_PIN);
 }
 
-// --- HAM RESET ---
-void LoRa_Reset(void) {
-    GPIO_InitTypeDef GPIO_InitStructure;
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
-    
-    GPIO_InitStructure.GPIO_Pin = LORA_RST_PIN;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_Init(LORA_RST_PORT, &GPIO_InitStructure);
-
-    // Chu trinh keo RST: Thap (10ms) -> Cao (10ms)
-    GPIO_ResetBits(LORA_RST_PORT, LORA_RST_PIN);
-    Delay_Ms(20);
-    GPIO_SetBits(LORA_RST_PORT, LORA_RST_PIN);
-    Delay_Ms(20);
-}
-
-// --- HAM TRUYEN NHAN SPI NOI BO ---
-static uint8_t SPI_Transfer(uint8_t data) {
-    uint16_t timeout = 1000;  // Arbitrary timeout value
+static uint8_t SPI_Transfer(uint8_t data)
+{
+    uint16_t timeout = 1000;
     while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET && --timeout);
-    if (timeout == 0) return 0xFF;  // Error indicator
+    if (timeout == 0) return 0xFF;
     SPI_I2S_SendData(SPI1, data);
-    
     timeout = 1000;
     while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_RXNE) == RESET && --timeout);
     if (timeout == 0) return 0xFF;
-    return SPI_I2S_ReceiveData(SPI1);
+    return (uint8_t)SPI_I2S_ReceiveData(SPI1);
 }
 
-// --- H�M GHI THANH GHI (WRITE) ---
-void LoRa_Write_Reg(uint8_t reg, uint8_t data) {
-    GPIO_ResetBits(LORA_NSS_PORT, LORA_NSS_PIN); // Ch?n chip
-    
-    // T?o d? tr? nh? d? NSS ?n d?nh
-    for(volatile int i = 0; i < 200; i++); 
+void LoRa_SPI_Init(void)
+{
+    GPIO_InitTypeDef gpio;
+    SPI_InitTypeDef spi;
 
-    // ��NG: Ghi th� bit 7 ph?i l� 1 (d�ng | 0x80)
-    SPI_Transfer(reg | 0x80); 
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB | RCC_APB2Periph_SPI1, ENABLE);
+
+    gpio.GPIO_Pin = GPIO_Pin_5 | GPIO_Pin_7;
+    gpio.GPIO_Mode = GPIO_Mode_AF_PP;
+    gpio.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init(GPIOA, &gpio);
+
+    gpio.GPIO_Pin = GPIO_Pin_6;
+    gpio.GPIO_Mode = GPIO_Mode_IN_FLOATING;
+    GPIO_Init(GPIOA, &gpio);
+
+    gpio.GPIO_Pin = LORA_NSS_PIN;
+    gpio.GPIO_Mode = GPIO_Mode_Out_PP;
+    GPIO_Init(LORA_NSS_PORT, &gpio);
+    LoRa_NSS(1);
+
+    spi.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
+    spi.SPI_Mode = SPI_Mode_Master;
+    spi.SPI_DataSize = SPI_DataSize_8b;
+    spi.SPI_CPOL = SPI_CPOL_Low;
+    spi.SPI_CPHA = SPI_CPHA_1Edge;
+    spi.SPI_NSS = SPI_NSS_Soft;
+    spi.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_32;
+    spi.SPI_FirstBit = SPI_FirstBit_MSB;
+    spi.SPI_CRCPolynomial = 7;
+    SPI_Init(SPI1, &spi);
+    SPI_Cmd(SPI1, ENABLE);
+}
+
+void LoRa_Reset(void)
+{
+    GPIO_InitTypeDef gpio;
+
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+    gpio.GPIO_Pin = LORA_RST_PIN;
+    gpio.GPIO_Mode = GPIO_Mode_Out_PP;
+    gpio.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init(LORA_RST_PORT, &gpio);
+
+    GPIO_ResetBits(LORA_RST_PORT, LORA_RST_PIN);
+    Delay_Ms(10);
+    GPIO_SetBits(LORA_RST_PORT, LORA_RST_PIN);
+    Delay_Ms(10);
+}
+
+void LoRa_Write_Reg(uint8_t reg, uint8_t data)
+{
+    LoRa_NSS(0);
+    SPI_Transfer(reg | 0x80);
     SPI_Transfer(data);
-
-    GPIO_SetBits(LORA_NSS_PORT, LORA_NSS_PIN); // B? ch?n chip
+    LoRa_NSS(1);
 }
 
-// --- H�M �?C THANH GHI (READ) ---
-uint8_t LoRa_Read_Reg(uint8_t reg) {
+uint8_t LoRa_Read_Reg(uint8_t reg)
+{
     uint8_t val;
-
-    GPIO_ResetBits(LORA_NSS_PORT, LORA_NSS_PIN);
-    Delay_Ms(1);
-
+    LoRa_NSS(0);
     SPI_Transfer(reg & 0x7F);
     val = SPI_Transfer(0x00);
-
-    Delay_Ms(1);
-    GPIO_SetBits(LORA_NSS_PORT, LORA_NSS_PIN);
-
+    LoRa_NSS(1);
     return val;
 }
 
-// --- HAM KHOI TAO CHINH ---
-uint8_t LoRa_Init(void) {
-    // 1. KHOI TAO SPI TRUOC DE CHAN NSS ON DINH
-    LoRa_SPI_Init(); 
-    
-    // 2. RESET MODULE
-    LoRa_Reset();    
-    
-    // 3. CAU HINH MODULE
-    LoRa_Write_Reg(REG_OP_MODE, 0x00); // Sleep mode
-    Delay_Ms(10);
-    LoRa_Write_Reg(REG_OP_MODE, 0x80); // Chuyen sang LoRa Mode
-    Delay_Ms(10);
-    
-    // Kiem tra Version
-    if (LoRa_Read_Reg(REG_VERSION) != 0x12) {
-        return 0; // That bai
+void LoRa_Write_Buffer(uint8_t reg, const uint8_t *data, uint8_t len)
+{
+    uint8_t i;
+    LoRa_NSS(0);
+    SPI_Transfer(reg | 0x80);
+    for (i = 0; i < len; i++)
+        SPI_Transfer(data[i]);
+    LoRa_NSS(1);
+}
+
+void LoRa_Read_Buffer(uint8_t reg, uint8_t *data, uint8_t len)
+{
+    uint8_t i;
+    LoRa_NSS(0);
+    SPI_Transfer(reg & 0x7F);
+    for (i = 0; i < len; i++)
+        data[i] = SPI_Transfer(0x00);
+    LoRa_NSS(1);
+}
+
+static void LoRa_SetOpMode(uint8_t mode)
+{
+    LoRa_Write_Reg(REG_OP_MODE, LORA_LONG_RANGE | mode);
+}
+
+void LoRa_SetStandby(void)
+{
+    LoRa_SetOpMode(MODE_STDBY);
+}
+
+void LoRa_ClearIrq(void)
+{
+    LoRa_Write_Reg(REG_IRQ_FLAGS, IRQ_ALL);
+}
+
+uint8_t LoRa_GetVersion(void)
+{
+    return LoRa_Read_Reg(REG_VERSION);
+}
+
+static void LoRa_SetFrequency(uint32_t freq_hz)
+{
+    uint32_t frf = (uint32_t)(((uint64_t)freq_hz << 19) / 32000000UL);
+    LoRa_Write_Reg(REG_FRF_MSB, (uint8_t)(frf >> 16));
+    LoRa_Write_Reg(REG_FRF_MID, (uint8_t)(frf >> 8));
+    LoRa_Write_Reg(REG_FRF_LSB, (uint8_t)(frf));
+}
+
+static uint8_t LoRa_MapTxPower(uint8_t dbm)
+{
+    if (dbm > 20) dbm = 20;
+    if (dbm < 2)  dbm = 2;
+    return (uint8_t)(0x80 | (dbm - 2)); /* PA_BOOST + power */
+}
+
+static void LoRa_ApplyModemConfig(const LoRa_Config_t *cfg)
+{
+    uint8_t mc1, mc2, mc3;
+
+    /* ModemConfig1: BW[7:4], CR[6:4], implicit header off (bit0=0 = explicit) */
+    mc1 = (uint8_t)((cfg->bandwidth << 4) | (cfg->coding_rate << 1) | 0x00);
+    /* ModemConfig2: SF[7:4], CRC on/off[2], continuous RX (bit0=0) */
+    mc2 = (uint8_t)((cfg->spreading_factor << 4) | (cfg->crc_on ? 0x04 : 0x00));
+    /* ModemConfig3: LowDataRateOptimize on when SF11/SF12 (long symbol time) */
+    mc3 = (cfg->spreading_factor >= 11) ? 0x0C : 0x04;
+
+    /* 0x1D: Signal bandwidth + forward error coding rate + header mode */
+    LoRa_Write_Reg(REG_MODEM_CONFIG_1, mc1);
+    /* 0x1E: Spreading factor + payload CRC enable */
+    LoRa_Write_Reg(REG_MODEM_CONFIG_2, mc2);
+    /* 0x26: Low-data-rate optimization (required at high SF / narrow BW) */
+    LoRa_Write_Reg(REG_MODEM_CONFIG_3, mc3);
+
+    /* 0x20/0x21: Preamble length in symbols (MSB=0, LSB=cfg->preamble_len) */
+    LoRa_Write_Reg(REG_PREAMBLE_MSB, 0x00);
+    LoRa_Write_Reg(REG_PREAMBLE_LSB, cfg->preamble_len);
+    /* 0x1F: RX symbol timeout LSB (guard time before RxTimeout IRQ) */
+    LoRa_Write_Reg(REG_SYMB_TIMEOUT_LSB, 0x08);
+    /* 0x39: Network ID — must match on TX and RX nodes */
+    LoRa_Write_Reg(REG_SYNC_WORD, cfg->sync_word);
+
+    /* 0x06..0x08: RF carrier frequency (FRF = freq_hz * 2^19 / 32 MHz) */
+    LoRa_SetFrequency(cfg->frequency_hz);
+    /* 0x09: TX output power via PA_BOOST (see LoRa_MapTxPower) */
+    LoRa_Write_Reg(REG_PA_CONFIG, LoRa_MapTxPower(cfg->tx_power));
+    /* 0x0B: Over-current protection ~120 mA (0x0B), protects PA */
+    LoRa_Write_Reg(REG_OCP, 0x0B);
+    /* 0x0C: LNA gain boost + max gain (improves RX sensitivity) */
+    LoRa_Write_Reg(REG_LNA, 0x23);
+
+    /* 0x0E/0x0F: Start of TX/RX FIFO in chip RAM (both at 0 = single buffer) */
+    LoRa_Write_Reg(REG_FIFO_TX_BASE_ADDR, 0x00);
+    LoRa_Write_Reg(REG_FIFO_RX_BASE_ADDR, 0x00);
+    /* DIO0 mapping is set per mode in LoRa_SetDioMappingRx() / LoRa_SetDioMappingTx() */
+    LoRa_Write_Reg(REG_DIO_MAPPING_2, 0x00);
+    /* 0x12: Clear all pending IRQ flags before TX/RX */
+    LoRa_ClearIrq();
+}
+
+void LoRa_DIO0_Init(void)
+{
+    GPIO_InitTypeDef gpio;
+    EXTI_InitTypeDef exti;
+    NVIC_InitTypeDef nvic;
+
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOB, ENABLE);
+
+    gpio.GPIO_Pin = LORA_DIO0_PIN;
+    gpio.GPIO_Mode = GPIO_Mode_IPD;
+    GPIO_Init(LORA_DIO0_PORT, &gpio);
+
+    GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource5);
+
+    EXTI_StructInit(&exti);
+    exti.EXTI_Line = LORA_DIO0_EXTI_LINE;
+    exti.EXTI_Mode = EXTI_Mode_Interrupt;
+    exti.EXTI_Trigger = EXTI_Trigger_Rising;
+    exti.EXTI_LineCmd = ENABLE;
+    EXTI_Init(&exti);
+
+    nvic.NVIC_IRQChannel = EXTI9_5_IRQn;
+    nvic.NVIC_IRQChannelPreemptionPriority = 1;
+    nvic.NVIC_IRQChannelSubPriority = 1;
+    nvic.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&nvic);
+}
+
+void LoRa_SetDioMappingRx(void)
+{
+    /* DIO0 high on RxDone; other DIOs unused */
+    LoRa_Write_Reg(REG_DIO_MAPPING_1, DIOMAP1_DIO0_RX_DONE);
+    LoRa_Write_Reg(REG_IRQ_FLAGS_MASK, IRQ_MASK_RX);
+}
+
+void LoRa_SetDioMappingTx(void)
+{
+    /* DIO0 high on TxDone */
+    LoRa_Write_Reg(REG_DIO_MAPPING_1, DIOMAP1_DIO0_TX_DONE);
+    LoRa_Write_Reg(REG_IRQ_FLAGS_MASK, IRQ_MASK_TX);
+}
+
+uint8_t LoRa_RxDonePending(void)
+{
+    return lora_rx_done_pending;
+}
+
+void LoRa_ClearRxDone(void)
+{
+    lora_rx_done_pending = 0;
+}
+
+void LoRa_OnDio0Irq(void)
+{
+    if (GPIO_ReadInputDataBit(LORA_DIO0_PORT, LORA_DIO0_PIN) == SET) {
+        lora_rx_done_pending = 1;
     }
+}
 
-    // Dat tan so 433MHz
-    LoRa_Write_Reg(REG_FRF_MSB, 0x6C);
-    LoRa_Write_Reg(REG_FRF_MID, 0x40);
-    LoRa_Write_Reg(REG_FRF_LSB, 0x00);
+static void LoRa_DefaultConfig(LoRa_Config_t *cfg)
+{
+    cfg->frequency_hz     = 433000000UL;
+    cfg->spreading_factor = 7;
+    cfg->bandwidth      = 7;   /* 125 kHz */
+    cfg->coding_rate    = 1;   /* 4/5 */
+    cfg->tx_power       = 17;
+    cfg->preamble_len   = 8;
+    cfg->sync_word      = 0xF1; /* match common private LoRa network */
+    cfg->crc_on         = 1;
+}
 
-    // Kich cong suat phat (Tuy chon)
-    LoRa_Write_Reg(REG_PA_CONFIG, 0xFF); 
+uint8_t LoRa_InitWithConfig(const LoRa_Config_t *cfg)
+{
+    if (cfg != NULL)
+        lora_cfg = *cfg;
+    else
+        LoRa_DefaultConfig(&lora_cfg);
 
-    // Dong bo hoa voi ESP32 (Gia tri 0xF1)
-    LoRa_Write_Reg(REG_SYNC_WORD, 0xF1);
+    LoRa_SPI_Init();
+    LoRa_Reset();
 
-    // Chuyen ve Standby Mode de san sang hoat dong
-    LoRa_Write_Reg(REG_OP_MODE, 0x81);
+    LoRa_SetOpMode(MODE_SLEEP);
+    Delay_Ms(10);
+
+    if (LoRa_GetVersion() != SX1278_VERSION)
+        return 0;
+
+    LoRa_ApplyModemConfig(&lora_cfg);
+    LoRa_DIO0_Init();
+    LoRa_SetStandby();
     return 1;
 }
 
-// --- HAM GUI CHUOI KY TU ---
-void LoRa_SendString(char* str) {
-    uint8_t len = strlen(str);
-    LoRa_Write_Reg(REG_OP_MODE, 0x81); // Standby
-    LoRa_Write_Reg(REG_FIFO_ADDR_PTR, LoRa_Read_Reg(REG_FIFO_TX_BASE));
-    LoRa_Write_Reg(REG_PAYLOAD_LENGTH, len);
-    for (uint8_t i = 0; i < len; i++) {
-        LoRa_Write_Reg(REG_FIFO, (uint8_t)str[i]);
-    }
-    LoRa_Write_Reg(REG_OP_MODE, 0x83); // TX Mode
-    
-    // Cho den khi phat xong
-    while ((LoRa_Read_Reg(REG_IRQ_FLAGS) & 0x08) == 0);
-    
-    // Xoa co ngat
-    LoRa_Write_Reg(REG_IRQ_FLAGS, 0x08);
+uint8_t LoRa_Init(void)
+{
+    return LoRa_InitWithConfig(NULL);
 }
 
+uint8_t LoRa_Transmit(const uint8_t *data, uint8_t len)
+{
+    uint8_t tx_base;
+    uint32_t timeout;
+    uint8_t irq;
 
+    if (data == NULL || len == 0 || len > LORA_MAX_PAYLOAD)
+        return 0;
 
+    LoRa_SetStandby();
+    LoRa_ClearIrq();
+    LoRa_ClearRxDone();
 
+    tx_base = LoRa_Read_Reg(REG_FIFO_TX_BASE_ADDR);
+    LoRa_Write_Reg(REG_FIFO_ADDR_PTR, tx_base);
+    LoRa_Write_Reg(REG_PAYLOAD_LENGTH, len);
+    LoRa_Write_Buffer(REG_FIFO, data, len);
+
+    LoRa_Write_Reg(REG_PA_DAC, 0x87);
+    LoRa_SetOpMode(MODE_TX);
+
+    timeout = 5000;
+    do {
+        irq = LoRa_Read_Reg(REG_IRQ_FLAGS);
+        if (irq & IRQ_TX_DONE) {
+            LoRa_Write_Reg(REG_IRQ_FLAGS, IRQ_TX_DONE);
+            LoRa_SetStandby();
+            return 1;
+        }
+        Delay_Ms(1);
+    } while (--timeout);
+
+    LoRa_SetStandby();
+    return 0;
+}
+
+void LoRa_SendString(char *str)
+{
+    if (str != NULL)
+        LoRa_Transmit((const uint8_t *)str, (uint8_t)strlen(str));
+}
+
+void LoRa_StartReceive(void)
+{
+    uint8_t rx_base;
+
+    LoRa_SetStandby();
+    LoRa_ClearIrq();
+    LoRa_ClearRxDone();
+    LoRa_SetDioMappingRx();
+
+    rx_base = LoRa_Read_Reg(REG_FIFO_RX_BASE_ADDR);
+    LoRa_Write_Reg(REG_FIFO_ADDR_PTR, rx_base);
+    LoRa_Write_Reg(REG_PA_DAC, 0x84);
+    LoRa_SetOpMode(MODE_RX_CONTINUOUS);
+}
+
+uint8_t LoRa_IsPacketReceived(void)
+{
+    /* Interrupt path: EXTI sets lora_rx_done_pending via LoRa_OnDio0Irq() */
+    return lora_rx_done_pending;
+}
+
+uint8_t LoRa_Receive(uint8_t *data, uint8_t max_len)
+{
+    uint8_t len, addr;
+
+    if (data == NULL || max_len == 0)
+        return 0;
+
+    if (!LoRa_IsPacketReceived())
+        return 0;
+
+    if (!(LoRa_Read_Reg(REG_IRQ_FLAGS) & IRQ_RX_DONE))
+        return 0;
+
+    if (lora_cfg.spreading_factor == 6) {
+        len = LoRa_Read_Reg(REG_PAYLOAD_LENGTH);
+    } else {
+        len = LoRa_Read_Reg(REG_RX_NB_BYTES);
+    }
+
+    if (len > max_len)
+        len = max_len;
+
+    addr = LoRa_Read_Reg(REG_FIFO_RX_CURRENT_ADDR);
+    LoRa_Write_Reg(REG_FIFO_ADDR_PTR, addr);
+    LoRa_Read_Buffer(REG_FIFO, data, len);
+
+    LoRa_ClearIrq();
+    LoRa_ClearRxDone();
+    LoRa_StartReceive();
+    return len;
+}
+
+int8_t LoRa_GetPacketRssi(void)
+{
+    return (int8_t)LoRa_Read_Reg(REG_PKT_RSSI_VALUE) - 137;
+}

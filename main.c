@@ -76,56 +76,37 @@ void LED_Blink(void) {
 int main(void) {
     LED_Init();
     char buf[64];
-    uint8_t ver;
 
     TIM2_Init();
     UART1_Init(115200);
     UART_SendString("\r\n===== TEST SPI LORA =====\r\n");
 
     // Init SPI + LoRa
-    LoRa_SPI_Init();
-    Delay_Ms(50);
+    if (LoRa_Init() == 0) {
+        UART_SendString("LoRa_Init failed\r\n");
+        while (1) { }
+    }
+    UART_SendString("LoRa_Init OK\r\n");
+    LoRa_StartReceive();
+    UART_SendString("LoRa RX listening (DIO0 interrupt)\r\n");
 
-    while (1) 
-    {
-
-        UART_SendString("\r\nDoc REG_VERSION...\r\n");
-
-// d?c nhi?u l?n cho ch?c
-        for (int i = 0; i < 5; i++) {
-
-            LED_Blink();
-            
-            // 1. TH�M "BREAKPOINT" V�O ��Y: Ngh? 1 gi�y tru?c khi d?c
-            Delay_Ms(500); 
-
-            // 2. L?nh d?c SPI th?c t? ch?y
-            ver = LoRa_Read_Reg(0x42);
-
-            // 3. In k?t qu? ra m�n h�nh (Terminal)
-            sprintf(buf, "Lan %d: 0x%02X\r\n", i+1, ver);
-            UART_SendString(buf);
-            
-            // B?n c� th? x�a c�i Delay_Ms(200); cu di cho d? r?i
+    while (1) {
+        /* No SPI/register polling — wait for EXTI from DIO0 (RxDone) */
+        if (LoRa_RxDonePending()) {
+            uint8_t rx_buf[64];
+            uint8_t n = LoRa_Receive(rx_buf, sizeof(rx_buf) - 1);
+            if (n > 0) {
+                int8_t rssi = LoRa_GetPacketRssi();
+                rx_buf[n] = '\0';
+                sprintf(buf, "RX %u bytes, RSSI %d dBm: ", n, (int)rssi);
+                UART_SendString(buf);
+                UART_SendString((char *)rx_buf);
+                UART_SendString("\r\n");
+                LED_Blink();
+            }
+        } else {
+            __WFI(); /* sleep until EXTI or other IRQ */
         }
-
-        // ===== PH�N T�CH =====
-            if (ver == 0x12) {
-            UART_SendString("OK -> LoRa OK\r\n");
-            }
-             else if (ver == 0x00) {
-            UART_SendString("LOI -> Khong co ket noi SPI\r\n");
-            }
-            else if (ver == 0xFF) {
-            UART_SendString("LOI -> MISO dang bi keo len (loi day)\r\n");
-            }
-            else {
-            UART_SendString("LOI -> Tin hieu sai (check GND / clock)\r\n");
-            }
-
-        UART_SendString("-------------------------\r\n");
-
-        Delay_Ms(1000);
     }
 }
 
