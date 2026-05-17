@@ -3,13 +3,17 @@
 
 #include "stm32f10x.h"
 
-/* Pins: SPI1 PA5/6/7, NSS PA4, RST PA3, DIO0 PB5 (optional) */
+/* SPI1 (SX1278) — change pins here only */
+#define LORA_SPI_PORT       GPIOA
+#define LORA_SPI_SCK_PIN    GPIO_Pin_5   /* PA5 — SPI1_SCK */
+#define LORA_SPI_MISO_PIN   GPIO_Pin_6   /* PA6 — SPI1_MISO */
+#define LORA_SPI_MOSI_PIN   GPIO_Pin_7   /* PA7 — SPI1_MOSI */
 #define LORA_NSS_PORT       GPIOA
-#define LORA_NSS_PIN        GPIO_Pin_4
+#define LORA_NSS_PIN        GPIO_Pin_4   /* PA4 — chip select (software NSS) */
 #define LORA_RST_PORT       GPIOA
-#define LORA_RST_PIN        GPIO_Pin_3
+#define LORA_RST_PIN        GPIO_Pin_3   /* PA3 — RESET */
 #define LORA_DIO0_PORT      GPIOB
-#define LORA_DIO0_PIN       GPIO_Pin_5
+#define LORA_DIO0_PIN       GPIO_Pin_5   /* PB5 — DIO0 / RxDone (EXTI) */
 #define LORA_DIO0_EXTI_LINE EXTI_Line5   /* PB5 -> EXTI9_5_IRQHandler */
 
 /* SX1278 registers (LoRa mode) */
