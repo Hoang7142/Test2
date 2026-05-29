@@ -102,6 +102,8 @@ int main(void) {
                 UART_SendString(buf);
                 UART_SendString((char *)rx_buf);
                 UART_SendString("\r\n");
+
+                LoRa_SendString((char *)rx_buf); // Send the received data back to the sender
                 LED_Blink();
             }
         } else {
