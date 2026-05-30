@@ -52,7 +52,7 @@
           <OutputName>TEST2</OutputName>
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>
-          <CreateHexFile>0</CreateHexFile>
+          <CreateHexFile>1</CreateHexFile>
           <DebugInformation>1</DebugInformation>
           <BrowseInformation>1</BrowseInformation>
           <ListingPath>.\Listings\</ListingPath>
@@ -186,7 +186,6 @@
             <RvdsVP>0</RvdsVP>
             <RvdsMve>0</RvdsMve>
             <RvdsCdeCp>0</RvdsCdeCp>
-            <nBranchProt>0</nBranchProt>
             <hadIRAM2>0</hadIRAM2>
             <hadIROM2>0</hadIROM2>
             <StupSel>8</StupSel>
@@ -323,7 +322,7 @@
             <PlainCh>0</PlainCh>
             <Ropi>0</Ropi>
             <Rwpi>0</Rwpi>
-            <wLevel>3</wLevel>
+            <wLevel>2</wLevel>
             <uThumb>0</uThumb>
             <uSurpInc>0</uSurpInc>
             <uC99>1</uC99>
@@ -555,19 +554,49 @@
               <FilePath>.\motor.c</FilePath>
             </File>
             <File>
-              <FileName>lora.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\lora.h</FilePath>
-            </File>
-            <File>
-              <FileName>lora.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\lora.c</FilePath>
-            </File>
-            <File>
               <FileName>stm32f10x_spi.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Libraries\STM32F10x_StdPeriph_Driver\src\stm32f10x_spi.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>lora</GroupName>
+          <Files>
+            <File>
+              <FileName>lora_radio.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\lora\lora_radio.c</FilePath>
+            </File>
+            <File>
+              <FileName>lora_radio.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\lora\lora_radio.h</FilePath>
+            </File>
+            <File>
+              <FileName>lora_protocol.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\lora\lora_protocol.c</FilePath>
+            </File>
+            <File>
+              <FileName>lora_protocol.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\lora\lora_protocol.h</FilePath>
+            </File>
+            <File>
+              <FileName>lora_node.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\lora\lora_node.c</FilePath>
+            </File>
+            <File>
+              <FileName>lora_node.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\lora\lora_node.h</FilePath>
+            </File>
+            <File>
+              <FileName>lora_network_config.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\lora\lora_network_config.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -595,6 +624,12 @@
     <Layers>
       <Layer>
         <LayName>TEST2</LayName>
+        <LayDesc></LayDesc>
+        <LayUrl></LayUrl>
+        <LayKeys></LayKeys>
+        <LayCat></LayCat>
+        <LayLic></LayLic>
+        <LayTarg>0</LayTarg>
         <LayPrjMark>1</LayPrjMark>
       </Layer>
     </Layers>
