@@ -15,9 +15,13 @@
 extern "C" {
 #endif
 
+/** Optional debug hook (same style as debug_log). NULL = silent. */
+typedef void (*lora_node_log_fn)(const char *fmt, ...);
+
 typedef struct {
   uint8_t node_id;
   uint8_t gateway_id;
+  lora_node_log_fn log;
 } lora_node_config_t;
 
 typedef bool (*lora_node_send_fn)(const uint8_t* data, size_t len);
