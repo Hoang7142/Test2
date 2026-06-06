@@ -23,7 +23,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f10x_it.h"
 #include "stm32f10x_exti.h"
-#include "lora.h"
+#include "lora_radio.h"
 
 /** @addtogroup STM32F10x_StdPeriph_Template
   * @{
@@ -159,7 +159,7 @@ void SysTick_Handler(void)
 void EXTI9_5_IRQHandler(void)
 {
   if (EXTI_GetITStatus(LORA_DIO0_EXTI_LINE) != RESET) {
-    LoRa_OnDio0Irq();
+    lora_radio_on_dio0_irq();
     EXTI_ClearITPendingBit(LORA_DIO0_EXTI_LINE);
   }
 }

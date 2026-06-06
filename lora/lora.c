@@ -315,18 +315,20 @@ uint8_t LoRa_Transmit(const uint8_t *data, uint8_t len)
     LoRa_Write_Reg(REG_PA_DAC, 0x87);
     LoRa_SetOpMode(MODE_TX);
 
-    timeout = 5000;
+    timeout = 100;
     do {
         irq = LoRa_Read_Reg(REG_IRQ_FLAGS);
         if (irq & IRQ_TX_DONE) {
             LoRa_Write_Reg(REG_IRQ_FLAGS, IRQ_TX_DONE);
             LoRa_SetStandby();
+            LoRa_StartReceive(); /* TX leaves chip in STDBY — must re-enter RX */
             return 1;
         }
         Delay_Ms(1);
     } while (--timeout);
 
     LoRa_SetStandby();
+    LoRa_StartReceive();
     return 0;
 }
 

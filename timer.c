@@ -1,50 +1,46 @@
-#include"timer.h"
-void TIM2_Init(void) 
+#include "timer.h"
+
+/**
+ * TIM2 one-shot timebase for delay.c only (TIM_SetCounter resets it).
+ * At SYSCLK 72 MHz, APB1 prescaler /2 => TIM2 kernel clock 72 MHz.
+ * PSC 72-1 => 1 MHz counter (1 tick = 1 us); ARR 0xFFFF.
+ */
+void TIM2_Init(void)
 {
     TIM_TimeBaseInitTypeDef timerInit;
+
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
-    
+
+    timerInit.TIM_Prescaler = 72 - 1;
     timerInit.TIM_CounterMode = TIM_CounterMode_Up;
     timerInit.TIM_Period = 0xFFFF;
-    timerInit.TIM_Prescaler = 36 - 1;
+    timerInit.TIM_ClockDivision = TIM_CKD_DIV1;
+    timerInit.TIM_RepetitionCounter = 0;
     TIM_TimeBaseInit(TIM2, &timerInit);
-	  //TIM_ClearFlag(TIM2, TIM_FLAG_Update);
+
+    TIM_ClearFlag(TIM2, TIM_FLAG_Update);
+    TIM_SetCounter(TIM2, 0);
     TIM_Cmd(TIM2, ENABLE);
 }
 
-
-void TIM4_Init(void)
+/**
+ * TIM4 free-running us counter for debug heartbeat (never reset by delay.c).
+ * Same 1 MHz tick rate as TIM2; ARR 0xFFFF => ~65.5 ms wrap.
+ */
+void TIM4_HeartbeatInit(void)
 {
     TIM_TimeBaseInitTypeDef timerInit;
-    NVIC_InitTypeDef nvicInit;
 
-    // B?t clock cho TIM4
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
 
-    // C?u h�nh TIM4: d?m l�n, 1000ms ng?t 1 l?n
+    timerInit.TIM_Prescaler = 72 - 1;
     timerInit.TIM_CounterMode = TIM_CounterMode_Up;
-    timerInit.TIM_Prescaler = 3600 - 1;   // 36MHz / 3600 = 10kHz => 0.1ms/tick
-    timerInit.TIM_Period = 10000 - 1;        // 1000 tick = 1000ms
+    timerInit.TIM_Period = 0xFFFF;
     timerInit.TIM_ClockDivision = TIM_CKD_DIV1;
     timerInit.TIM_RepetitionCounter = 0;
     TIM_TimeBaseInit(TIM4, &timerInit);
 
-    // Clear c? update
     TIM_ClearFlag(TIM4, TIM_FLAG_Update);
-
-    // Enable ng?t update
-    TIM_ITConfig(TIM4, TIM_IT_Update, ENABLE);
-
-    // C?u h�nh NVIC cho TIM4
-    nvicInit.NVIC_IRQChannel = TIM4_IRQn;
-    nvicInit.NVIC_IRQChannelPreemptionPriority = 1;
-    nvicInit.NVIC_IRQChannelSubPriority = 1;
-    nvicInit.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&nvicInit);
-
-    // B?t d?u Timer
+    TIM_SetCounter(TIM4, 0);
     TIM_Cmd(TIM4, ENABLE);
 }
-
-
-
