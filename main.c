@@ -137,6 +137,7 @@ static uint8_t my_read_sensor(uint8_t *payload, uint8_t max_len)
     lora_sensor_payload_t sample;
     uint8_t temp = 0;
     uint8_t humi = 0;
+	  Analog_Data_t analog_sensor_data;
 
     if (max_len < sizeof(sample)) {
         debug_log("[Sensor] read failed: buffer too small (%u)\r\n",
@@ -145,20 +146,35 @@ static uint8_t my_read_sensor(uint8_t *payload, uint8_t max_len)
     }
 
     memset(&sample, 0, sizeof(sample));
-
+    //doc DHT11
     if (DHT11_ReadData(&temp, &humi) == DHT11_OK) {
         sample.temperature_c10 = (int16_t)temp * 10;
         sample.humidity_pct10 = (uint16_t)humi * 10;
     }
 
-    sample.soil_moisture = (uint16_t)GetDoAmDatValue();
-    sample.water_level = (uint16_t)WaterLevel_GetPercent();
+    // 2. Đọc nhóm cảm biến ADC gộp (Độ ẩm đất, Mực nước, Dòng điện)
+    Analog_UpdateAll(&analog_sensor_data);
+    sample.soil_moisture = (uint16_t)analog_sensor_data.soil_percent;
+    sample.water_level   = (uint16_t)analog_sensor_data.water_percent;
+    sample.current_mA    = (uint16_t)(analog_sensor_data.current_ampe * 1000.0f); // Quy đổi A -> mA
+		
+		// 3. Đọc cảm biến mưa (Digital)
+    sample.rain_status = Rain_Read();
 
-    debug_log("[Sensor] temp_c10=%d  hum_c10=%u  soil=%u  water=%u%%\r\n",
-              (int)sample.temperature_c10,
-              (unsigned)sample.humidity_pct10,
+    // 4. Đọc cảm biến lưu lượng nước (Tính toán dựa trên thời gian lấy mẫu, ví dụ 1000ms)
+    // Để chính xác, ở đây lấy mẫu tạm thời 1000ms hoặc bạn có thể tối ưu theo thời gian thực vòng lặp
+    float flow_real = Flow_GetLitersPerMinute(1000); 
+    sample.flow_rate_Lmin_x10 = (uint8_t)(flow_real * 10.0f);
+
+    // In log debug ra UART1 để giám sát tại chỗ
+    debug_log("[Sensor] Temp=%d|Hum=%u|Soil=%u%%|Water=%u%%|Current=%umA|Rain=%s|Flow=%.1f L/m\r\n",
+              (int)sample.temperature_c10/10,
+              (unsigned)sample.humidity_pct10/10,
               (unsigned)sample.soil_moisture,
-              (unsigned)sample.water_level);
+              (unsigned)sample.water_level,
+              (unsigned)sample.current_mA,
+              (sample.rain_status == 0) ? "YES" : "NO",
+              flow_real);
 
     memcpy(payload, &sample, sizeof(sample));
     return (uint8_t)sizeof(sample);
@@ -169,7 +185,7 @@ int main(void) {
     LED_Init();
 
     UART1_Init(115200);
-    UART_SendString("\r\n===== STM32 LoRa Slave Node =====\r\n");
+    UART_SendString("\r\n===== STM32 LoRa Slave Node (Updated) =====\r\n");
     debug_log("[Boot] UART1 115200 OK\r\n");
 
     debug_log("[Boot] TIM2 (delay) init...\r\n");
@@ -182,13 +198,21 @@ int main(void) {
     DHT11_Init();
     debug_log("[Boot] DHT11 OK\r\n");
 
-    debug_log("[Boot] ADC init...\r\n");
-    ADC_InitConfig();
-    debug_log("[Boot] ADC OK\r\n");
+    // --- ĐỔI KHÚC NÀY THÀNH FILE GỘP ANALOG MỚI ---
+    debug_log("[Boot] Analog ADC channels init...\r\n");
+    Analog_Init(); 
+    debug_log("[Boot] Calibrating ACS712 Current Sensor...\r\n");
+    Analog_Calibrate(); // Tự động lấy điểm 0 dòng điện lúc khởi động
+    debug_log("[Boot] Analog ADC OK\r\n");
+    // ----------------------------------------------
 
-    debug_log("[Boot] Water level init...\r\n");
-    WaterLevel_Init();
-    debug_log("[Boot] Water level OK\r\n");
+    // --- THÊM CÁC CẢM BIẾN MỚI KHỞI TẠO Ở ĐÂY ---
+    debug_log("[Boot] Rain sensor init...\r\n");
+    Rain_Init();
+    
+    debug_log("[Boot] Flow sensor init...\r\n");
+    FlowSensor_Init(); // Đã giải phóng chân PB3 bên trong hàm
+    // --------------------------------------------
 
     Delay_Ms(100);
 

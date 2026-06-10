@@ -48,6 +48,9 @@ typedef struct LORA_PACKED {
   uint16_t humidity_pct10;
   uint16_t soil_moisture;
   uint16_t water_level;
+	uint16_t current_mA;  
+	uint8_t rain_status;
+	uint8_t flow_rate_Lmin_x10;
 } lora_sensor_payload_t;
 
 uint16_t lora_crc16(const uint8_t* data, size_t len);
