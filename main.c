@@ -208,7 +208,8 @@ int main(void) {
     Rain_Init();
     
     debug_log("[Boot] Flow sensor init...\r\n");
-    FlowSensor_Init(); // Đã giải phóng chân PB3 bên trong hàm
+		Motor_Init();
+    FlowSensor_Init(); // Đã giải phóng chân PB4 bên trong hàm
     // --------------------------------------------
 
     Delay_Ms(100);
