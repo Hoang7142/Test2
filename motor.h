@@ -12,7 +12,6 @@
 void Motor_Init(void);
 void Motor1_SetSpeed(uint16_t speed); /* Toc do tu 0 - 100 */
 void Motor1_Dir(uint8_t dir);         /* Huong: Stop, Forward, Backward */
-void Motor2_SetSpeed(uint16_t speed); 
-void Motor2_Dir(uint8_t dir);
+
 
 #endif

@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>STM32F10X_MD,USE_STDPERIPH_DRIVER</Define>
               <Undefine></Undefine>
-              <IncludePath>..\STM32F103_20250407;.\lora;.\Libraries\STM32F10x_StdPeriph_Driver\inc;.\Libraries\CMSIS\CM3\CoreSupport</IncludePath>
+              <IncludePath>..\Test2;.\lora;.\Libraries\CMSIS\CM3\CoreSupport;.\Libraries\STM32F10x_StdPeriph_Driver\inc;.\Libraries;.\Libraries\CMSIS\CM3\CoreSupport</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -454,21 +454,6 @@
               <FilePath>.\Libraries\STM32F10x_StdPeriph_Driver\src\stm32f10x_i2c.c</FilePath>
             </File>
             <File>
-              <FileName>pwm.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\pwm.c</FilePath>
-            </File>
-            <File>
-              <FileName>adc.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\adc.c</FilePath>
-            </File>
-            <File>
-              <FileName>adc.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\adc.h</FilePath>
-            </File>
-            <File>
               <FileName>stm32f10x_adc.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Libraries\STM32F10x_StdPeriph_Driver\src\stm32f10x_adc.c</FilePath>
@@ -487,16 +472,6 @@
               <FileName>rain.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\rain.c</FilePath>
-            </File>
-            <File>
-              <FileName>water_level.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\water_level.h</FilePath>
-            </File>
-            <File>
-              <FileName>water_level.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\water_level.c</FilePath>
             </File>
             <File>
               <FileName>flow_sensor.h</FileName>
@@ -522,26 +497,6 @@
               <FileName>analog.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\analog.c</FilePath>
-            </File>
-            <File>
-              <FileName>art.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\art.h</FilePath>
-            </File>
-            <File>
-              <FileName>art.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\art.c</FilePath>
-            </File>
-            <File>
-              <FileName>dht22.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\dht22.h</FilePath>
-            </File>
-            <File>
-              <FileName>dht22.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\dht22.c</FilePath>
             </File>
             <File>
               <FileName>motor.h</FileName>
