@@ -85,9 +85,9 @@ size_t lora_packet_encode(const lora_packet_t* pkt, uint8_t* buf, size_t buf_len
 bool lora_packet_decode(const uint8_t* buf, size_t buf_len, lora_packet_t* pkt_out) {
   if (buf == NULL || pkt_out == NULL || buf_len < LORA_PACKET_MIN_SIZE) {
     return false;
-  }
+  }//kiem tra xem goi tin cho dung kich thuoc khong
 
-  const uint8_t payload_len = buf[4];
+  const uint8_t payload_len = buf[4];// kiem tra do dai cua du lieuj trong payload
   if (payload_len > LORA_MAX_PAYLOAD) {
     return false;
   }
@@ -103,21 +103,21 @@ bool lora_packet_decode(const uint8_t* buf, size_t buf_len, lora_packet_t* pkt_o
   pkt_out->cmd = buf[2];
   pkt_out->seq = buf[3];
   pkt_out->payload_len = payload_len;
-  memset(pkt_out->payload, 0, sizeof(pkt_out->payload));
+  memset(pkt_out->payload, 0, sizeof(pkt_out->payload));// xoa du lieu cu
   if (payload_len > 0) {
-    memcpy(pkt_out->payload, buf + LORA_PACKET_HEADER_SIZE, payload_len);
+    memcpy(pkt_out->payload, buf + LORA_PACKET_HEADER_SIZE, payload_len);//coppu du lieuj vao thung hang
   }
 
   {
     const size_t crc_offset = LORA_PACKET_HEADER_SIZE + payload_len;
     pkt_out->crc = (uint16_t)buf[crc_offset] |
                    ((uint16_t)buf[crc_offset + 1] << 8);
-  }
+  }// lap rap lai ma loi nguoc crc
 
   return lora_packet_verify_crc(pkt_out);
 }
 
-bool lora_packet_verify_crc(const lora_packet_t* pkt) {
+bool lora_packet_verify_crc(const lora_packet_t* pkt) {// lay goi tin tu decoder tinh lai crc
   if (pkt == NULL || pkt->payload_len > LORA_MAX_PAYLOAD) {
     return false;
   }

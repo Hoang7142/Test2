@@ -18,6 +18,7 @@ extern "C" {
 #define CMD_SENSOR_DATA   0x02
 #define CMD_ACK           0x03
 #define CMD_PING          0x04
+#define CMD_WRITE_CONTROL 0x05  // ?? Mã l?nh di?u khi?n m?i t? Gateway g?i xu?ng Node
 
 #define LORA_MAX_PAYLOAD        32
 #define LORA_PACKET_HEADER_SIZE 5
@@ -32,6 +33,15 @@ extern "C" {
 #else
 #define LORA_PACKED
 #endif
+
+// ?? Struct nén d? li?u nút b?m d? truy?n qua LoRa (Ti?t ki?m bang thông)
+typedef struct LORA_PACKED {
+  uint8_t pump_status;   // 1: B?t, 0: T?t
+  uint8_t pump_pwm;      // 0 - 100
+  uint8_t roof_status;   // 0: STOP, 1: OPEN (M?), 2: CLOSE (Ðóng)
+  uint8_t roof_pwm;      // 0 - 100
+  uint8_t system_mode;   // 0: manual (th? công), 1: auto (t? d?ng)
+} lora_control_payload_t;
 
 typedef struct LORA_PACKED {
   uint8_t dst;
@@ -51,7 +61,13 @@ typedef struct LORA_PACKED {
 	uint16_t current_mA;  
 	uint8_t rain_status;
 	uint8_t flow_rate_Lmin_x10;
-} lora_sensor_payload_t;
+// --- ?? THÊM 3 BI?N NÀY Ð? Ð?NG B? NGU?C NÚT NH?N V?T LÝ ---
+    uint8_t system_mode;  // 1: AUTO, 0: MANUAL
+    uint8_t pump_status;  // 1: ON, 0: OFF
+    uint8_t roof_status;  // 1: OPEN, 2: CLOSE, 0: STOP
+	// --- CHÈN THÊM BI?N NÀY Ð? BÁO MÃ L?I LÊN M?NG ---
+    uint8_t pump_diagnostic; // 0: Normal, 1: Dry-run, 2: Overload
+} __attribute__((packed)) lora_sensor_payload_t;
 
 uint16_t lora_crc16(const uint8_t* data, size_t len);
 

@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>STM32F10X_MD,USE_STDPERIPH_DRIVER</Define>
               <Undefine></Undefine>
-              <IncludePath>.\lora;..\..\code da merge;.\Libraries\CMSIS\CM3\CoreSupport;.\Libraries\STM32F10x_StdPeriph_Driver\inc;.\Libraries\STM32F10x_StdPeriph_Driver\src;..\..\STM32F103_20250407;..\..\STM32F103_20250407\Libraries;.\Libraries\CMSIS\CM3\CoreSupport;.\Libraries\STM32F10x_StdPeriph_Driver\inc;.\Libraries\STM32F10x_StdPeriph_Driver\src</IncludePath>
+              <IncludePath>.\lora;..\..\code da merge;.\Libraries\CMSIS\CM3\CoreSupport;.\Libraries\STM32F10x_StdPeriph_Driver\src;..\..\STM32F103_20250407;..\..\STM32F103_20250407\Libraries;.\Libraries\CMSIS\CM3\CoreSupport;.\Libraries\STM32F10x_StdPeriph_Driver\src;.\Libraries\STM32F10x_StdPeriph_Driver\inc;.\Libraries\STM32F10x_StdPeriph_Driver\src;.\Libraries\CMSIS\CM3\CoreSupport</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -513,6 +513,16 @@
               <FileName>stm32f10x_spi.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Libraries\STM32F10x_StdPeriph_Driver\src\stm32f10x_spi.c</FilePath>
+            </File>
+            <File>
+              <FileName>menu_control.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\menu_control.h</FilePath>
+            </File>
+            <File>
+              <FileName>menu_control.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\menu_control.c</FilePath>
             </File>
           </Files>
         </Group>
