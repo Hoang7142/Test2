@@ -18,7 +18,8 @@ extern "C" {
 #define CMD_SENSOR_DATA   0x02
 #define CMD_ACK           0x03
 #define CMD_PING          0x04
-#define CMD_WRITE_CONTROL 0x05  // ?? Mã l?nh di?u khi?n m?i t? Gateway g?i xu?ng Node
+#define CMD_WRITE_CONTROL 0x05
+#define CMD_SET_THRESHOLDS 0x06  // ?? M? l?nh di?u khi?n m?i t? Gateway g?i xu?ng Node
 
 #define LORA_MAX_PAYLOAD        32
 #define LORA_PACKET_HEADER_SIZE 5
@@ -34,14 +35,27 @@ extern "C" {
 #define LORA_PACKED
 #endif
 
-// ?? Struct nén d? li?u nút b?m d? truy?n qua LoRa (Ti?t ki?m bang thông)
+// ?? Struct n?n d? li?u n?t b?m d? truy?n qua LoRa (Ti?t ki?m bang th?ng)
 typedef struct LORA_PACKED {
   uint8_t pump_status;   // 1: B?t, 0: T?t
   uint8_t pump_pwm;      // 0 - 100
-  uint8_t roof_status;   // 0: STOP, 1: OPEN (M?), 2: CLOSE (Ðóng)
+  uint8_t roof_status;   // 0: STOP, 1: OPEN (M?), 2: CLOSE (??ng)
   uint8_t roof_pwm;      // 0 - 100
-  uint8_t system_mode;   // 0: manual (th? công), 1: auto (t? d?ng)
+  uint8_t system_mode;   // 0: manual (th? c?ng), 1: auto (t? d?ng)
 } lora_control_payload_t;
+
+typedef struct LORA_PACKED {
+  uint8_t soil_on;   // Bat bom khi do am dat < soil_on (%)
+  uint8_t soil_off;  // Tat bom khi do am dat > soil_off (%)
+} lora_threshold_payload_t;
+
+/** Ma chan doan bom — gui trong SENSOR_DATA.pump_diagnostic (1 byte) */
+typedef enum {
+  PUMP_DIAG_OK = 0,
+  PUMP_DIAG_DRY_RUN = 1,
+  PUMP_DIAG_OVERLOAD = 2,
+  PUMP_DIAG_WATER_EMPTY = 3
+} pump_diagnostic_t;
 
 typedef struct LORA_PACKED {
   uint8_t dst;
@@ -61,12 +75,12 @@ typedef struct LORA_PACKED {
 	uint16_t current_mA;  
 	uint8_t rain_status;
 	uint8_t flow_rate_Lmin_x10;
-// --- ?? THÊM 3 BI?N NÀY Ð? Ð?NG B? NGU?C NÚT NH?N V?T LÝ ---
+// --- ?? TH?M 3 BI?N N?Y ?? ??NG B? NGU?C N?T NH?N V?T L? ---
     uint8_t system_mode;  // 1: AUTO, 0: MANUAL
     uint8_t pump_status;  // 1: ON, 0: OFF
     uint8_t roof_status;  // 1: OPEN, 2: CLOSE, 0: STOP
-	// --- CHÈN THÊM BI?N NÀY Ð? BÁO MÃ L?I LÊN M?NG ---
-    uint8_t pump_diagnostic; // 0: Normal, 1: Dry-run, 2: Overload
+	// --- CH?N TH?M BI?N N?Y ?? B?O M? L?I L?N M?NG ---
+    uint8_t pump_diagnostic; /* pump_diagnostic_t: OK/DRY_RUN/OVERLOAD/WATER_EMPTY */
 } __attribute__((packed)) lora_sensor_payload_t;
 
 uint16_t lora_crc16(const uint8_t* data, size_t len);

@@ -1,5 +1,5 @@
 /**
- * STM32F103 LoRa slave sensor node â€” interoperates with ESP32_LORA gateway.
+ * STM32F103 LoRa slave sensor node — interoperates with ESP32_LORA gateway.
  *
  * Set MY_NODE_ID per board (0x11, 0x12, 0x13) in lora/lora_network_config.h
  * or via compiler define -DMY_NODE_ID=0x12
@@ -14,7 +14,6 @@
 #include "dht11.h"
 #include "i2c_lcd.h"
 #include "rain.h"
-#include "relay.h"
 #include "flow_sensor.h"
 #include "analog.h"
 #include "motor.h"
@@ -24,9 +23,12 @@
 #include "lora_network_config.h"
 #include "lora_radio.h"
 #include "menu_control.h"
-///* Biáº¿n toÃ n cá»¥c lÆ°u tráº¡ng thÃ¡i nÃºt nháº¥n nháº­n tá»« LoRa Gateway */
+
+/* ===== DEBUG TEST ÐI?U KHI?N — d?i 0 sau khi test xong ===== */
+#define CONTROL_TEST_DEBUG  0
+///* Bi?n toàn c?c luu tr?ng thái nút nh?n nh?n t? LoRa Gateway */
 //volatile lora_control_payload_t g_remote_control;
-//volatile uint8_t g_control_updated = 0; // Cá» bÃ¡o hiá»‡u cÃ³ lá»‡nh má»›i
+//volatile uint8_t g_control_updated = 0; // C? báo hi?u có l?nh m?i
 
 ///* ===== UART debug ===== */
 //static void UART1_Init(uint32_t baudrate)
@@ -153,21 +155,21 @@
 //        sample.humidity_pct10 = (uint16_t)humi * 10;
 //    }
 
-//    // 2. Äá»c nhÃ³m cáº£m biáº¿n ADC gá»™p (Äá»™ áº©m Ä‘áº¥t, Má»±c nÆ°á»›c, DÃ²ng Ä‘iá»‡n)
+//    // 2. Ð?c nhóm c?m bi?n ADC g?p (Ð? ?m d?t, M?c nu?c, Dòng di?n)
 //    Analog_UpdateAll(&analog_sensor_data);
 //    sample.soil_moisture = (uint16_t)analog_sensor_data.soil_percent;
 //    sample.water_level   = (uint16_t)analog_sensor_data.water_percent;
-//    sample.current_mA    = (uint16_t)(analog_sensor_data.current_ampe * 1000.0f); // Quy Ä‘á»•i A -> mA
+//    sample.current_mA    = (uint16_t)(analog_sensor_data.current_ampe * 1000.0f); // Quy d?i A -> mA
 //		
-//		// 3. Äá»c cáº£m biáº¿n mÆ°a (Digital)
+//		// 3. Ð?c c?m bi?n mua (Digital)
 //    sample.rain_status = Rain_Read();
 
-//    // 4. Äá»c cáº£m biáº¿n lÆ°u lÆ°á»£ng nÆ°á»›c (TÃ­nh toÃ¡n dá»±a trÃªn thá»i gian láº¥y máº«u, vÃ­ dá»¥ 1000ms)
-//    // Äá»ƒ chÃ­nh xÃ¡c, á»Ÿ Ä‘Ã¢y láº¥y máº«u táº¡m thá»i 1000ms hoáº·c báº¡n cÃ³ thá»ƒ tá»‘i Æ°u theo thá»i gian thá»±c vÃ²ng láº·p
+//    // 4. Ð?c c?m bi?n luu lu?ng nu?c (Tính toán d?a trên th?i gian l?y m?u, ví d? 1000ms)
+//    // Ð? chính xác, ? dây l?y m?u t?m th?i 1000ms ho?c b?n có th? t?i uu theo th?i gian th?c vòng l?p
 //    float flow_real = Flow_GetLitersPerMinute(1000); 
 //    sample.flow_rate_Lmin_x10 = (uint8_t)(flow_real * 10.0f);
 
-//    // In log debug ra UART1 Ä‘á»ƒ giÃ¡m sÃ¡t táº¡i chá»—
+//    // In log debug ra UART1 d? giám sát t?i ch?
 //    debug_log("[Sensor] Temp=%d|Hum=%u|Soil=%u%%|Water=%u%%|Current=%umA|Rain=%s|Flow=%.1f L/m\r\n",
 //              (int)sample.temperature_c10/10,
 //              (unsigned)sample.humidity_pct10/10,
@@ -199,21 +201,21 @@
 //    DHT11_Init();
 //    debug_log("[Boot] DHT11 OK\r\n");
 
-//    // --- Äá»”I KHÃšC NÃ€Y THÃ€NH FILE Gá»˜P ANALOG Má»šI ---
+//    // --- Ð?I KHÚC NÀY THÀNH FILE G?P ANALOG M?I ---
 //    debug_log("[Boot] Analog ADC channels init...\r\n");
 //    Analog_Init(); 
 //    debug_log("[Boot] Calibrating ACS712 Current Sensor...\r\n");
-//    Analog_Calibrate(); // Tá»± Ä‘á»™ng láº¥y Ä‘iá»ƒm 0 dÃ²ng Ä‘iá»‡n lÃºc khá»Ÿi Ä‘á»™ng
+//    Analog_Calibrate(); // T? d?ng l?y di?m 0 dòng di?n lúc kh?i d?ng
 //    debug_log("[Boot] Analog ADC OK\r\n");
 //    // ----------------------------------------------
 
-//    // --- THÃŠM CÃC Cáº¢M BIáº¾N Má»šI KHá»žI Táº O á»ž ÄÃ‚Y ---
+//    // --- THÊM CÁC C?M BI?N M?I KH?I T?O ? ÐÂY ---
 //    debug_log("[Boot] Rain sensor init...\r\n");
 //    Rain_Init();
 //    
 //    debug_log("[Boot] Flow sensor init...\r\n");
 //		Motor_Init();
-//    FlowSensor_Init(); // ÄÃ£ giáº£i phÃ³ng chÃ¢n PB4 bÃªn trong hÃ m
+//    FlowSensor_Init(); // Ðã gi?i phóng chân PB4 bên trong hàm
 //    // --------------------------------------------
 
 //    Delay_Ms(100);
@@ -252,54 +254,54 @@
 //        lora_node_init(&node, &cfg, &radio);
 
 //while (1) {
-//    // 1. LuÃ´n luÃ´n quÃ©t sÃ³ng LoRa Ä‘á»ƒ nháº­n dá»¯ liá»‡u
+//    // 1. Luôn luôn quét sóng LoRa d? nh?n d? li?u
 //    lora_node_poll(&node);
 //    
-//    // 2. Kiá»ƒm tra xem cÃ³ lá»‡nh nÃºt nháº¥n má»›i tá»« Web Ä‘á»• xuá»‘ng khÃ´ng
+//    // 2. Ki?m tra xem có l?nh nút nh?n m?i t? Web d? xu?ng không
 //    if (g_control_updated) {
-//        g_control_updated = 0; // XÃ³a cá» ngay láº­p tá»©c Ä‘á»ƒ trÃ¡nh xá»­ lÃ½ láº·p
+//        g_control_updated = 0; // Xóa c? ngay l?p t?c d? tránh x? lý l?p
 //        
-//        debug_log("[Hardware] Thá»±c thi lá»‡nh Ä‘iá»u khiá»ƒn tá»« Web...\r\n");
+//        debug_log("[Hardware] Th?c thi l?nh di?u khi?n t? Web...\r\n");
 //        
-//        /* ---------------- A. ÄIá»€U KHIá»‚N MÃY BÆ M ---------------- */
+//        /* ---------------- A. ÐI?U KHI?N MÁY BOM ---------------- */
 //        if (g_remote_control.pump_status == 1) {
-//            // NhÃ³m cá»§a báº¡n hÃ£y gá»i hÃ m kÃ­ch hoáº¡t Relay/BÆ¡m tháº­t á»Ÿ Ä‘Ã¢y, vÃ­ dá»¥:
+//            // Nhóm c?a b?n hãy g?i hàm kích ho?t Relay/Bom th?t ? dây, ví d?:
 //            // Relay_Pump_On();
-//            debug_log("-> Pháº§n cá»©ng: Báº¬T BÆ M - Tá»‘c Ä‘á»™ PWM: %u%%\r\n", g_remote_control.pump_pwm);
+//            debug_log("-> Ph?n c?ng: B?T BOM - T?c d? PWM: %u%%\r\n", g_remote_control.pump_pwm);
 //        } else {
 //            // Relay_Pump_Off();
-//            debug_log("-> Pháº§n cá»©ng: Táº®T BÆ M\r\n");
+//            debug_log("-> Ph?n c?ng: T?T BOM\r\n");
 //        }
 //        
-//        /* ---------------- B. ÄIá»€U KHIá»‚N MÃI CHE ---------------- */
+//        /* ---------------- B. ÐI?U KHI?N MÁI CHE ---------------- */
 //        if (g_remote_control.roof_status == 1) {
-//            // NhÃ³m cá»§a báº¡n hÃ£y gá»i hÃ m kÃ­ch hoáº¡t Motor quay thuáº­n á»Ÿ Ä‘Ã¢y, vÃ­ dá»¥:
+//            // Nhóm c?a b?n hãy g?i hàm kích ho?t Motor quay thu?n ? dây, ví d?:
 //            // Motor_Roof_Open(g_remote_control.roof_pwm);
-//            debug_log("-> Pháº§n cá»©ng: Má»ž MÃI CHE - PWM: %u%%\r\n", g_remote_control.roof_pwm);
+//            debug_log("-> Ph?n c?ng: M? MÁI CHE - PWM: %u%%\r\n", g_remote_control.roof_pwm);
 //        } 
 //        else if (g_remote_control.roof_status == 2) {
-//            // NhÃ³m cá»§a báº¡n hÃ£y gá»i hÃ m kÃ­ch hoáº¡t Motor quay ngÆ°á»£c á»Ÿ Ä‘Ã¢y, vÃ­ dá»¥:
+//            // Nhóm c?a b?n hãy g?i hàm kích ho?t Motor quay ngu?c ? dây, ví d?:
 //            // Motor_Roof_Close(g_remote_control.roof_pwm);
-//            debug_log("-> Pháº§n cá»©ng: ÄÃ“NG MÃI CHE - PWM: %u%%\r\n", g_remote_control.roof_pwm);
+//            debug_log("-> Ph?n c?ng: ÐÓNG MÁI CHE - PWM: %u%%\r\n", g_remote_control.roof_pwm);
 //        } 
 //        else {
-//            // NhÃ³m cá»§a báº¡n hÃ£y gá»i hÃ m dá»«ng Motor á»Ÿ Ä‘Ã¢y, vÃ­ dá»¥:
+//            // Nhóm c?a b?n hãy g?i hàm d?ng Motor ? dây, ví d?:
 //            // Motor_Roof_Stop();
-//            debug_log("-> Pháº§n cá»©ng: Dá»ªNG MÃI CHE\r\n");
+//            debug_log("-> Ph?n c?ng: D?NG MÁI CHE\r\n");
 //        }
 //        
-//        /* ------------- C. Äá»’NG Bá»˜ CHáº¾ Äá»˜ Há»† THá»NG ------------- */
+//        /* ------------- C. Ð?NG B? CH? Ð? H? TH?NG ------------- */
 //        if (g_remote_control.system_mode == 1) {
-//            debug_log("-> Há»‡ thá»‘ng chuyá»ƒn sang cháº¿ Ä‘á»™: Tá»° Äá»˜NG (Auto)\r\n");
+//            debug_log("-> H? th?ng chuy?n sang ch? d?: T? Ð?NG (Auto)\r\n");
 //        } else {
-//            debug_log("-> Há»‡ thá»‘ng chuyá»ƒn sang cháº¿ Ä‘á»™: THá»¦ CÃ”NG (Manual)\r\n");
+//            debug_log("-> H? th?ng chuy?n sang ch? d?: TH? CÔNG (Manual)\r\n");
 //        }
 //        
-//        // Nháº¥p nhÃ¡y Ä‘Ã¨n LED PC13 Ä‘á»ƒ bÃ¡o hiá»‡u xá»­ lÃ½ lá»‡nh thÃ nh cÃ´ng
+//        // Nh?p nháy dèn LED PC13 d? báo hi?u x? lý l?nh thành công
 //        LED_Blink();
 //    }
 //    
-//    // 3. Giá»¯ nhá»‹p Ä‘áº­p heartbeat giÃ¡m sÃ¡t táº¡i chá»—
+//    // 3. Gi? nh?p d?p heartbeat giám sát t?i ch?
 //    debug_heartbeat();
 //}
 
@@ -308,445 +310,71 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-/* Bi?n toàn c?c luu tr?ng thái nút nh?n nh?n t? LoRa Gateway */
-volatile lora_control_payload_t g_remote_control;
-volatile uint8_t g_control_updated = 0; // C? báo hi?u có l?nh m?i
-
-/* ========================================================================== */
-/* ?? THÊM: BI?N TOÀN C?C QU?N LÝ TR?NG THÁI TH?C T? T?I VU?N                 */
-/* ========================================================================== */
-menu_control_data_t g_system_control = {
-    .system_mode = 0, // Ban d?u m?c d?nh: 0 = MANUAL, 1 = AUTO
-    .pump_status = 0, // 0 = OFF, 1 = ON
-    .roof_status = 0  // 0 = STOP, MOTOR_FORWARD = OPEN, MOTOR_BACKWARD = CLOSE
-};
-uint8_t g_lcd_update = 1; // C? báo hi?u c?n v? l?i màn hình LCD
-uint8_t current_roof_pwm = 100; // Luu t?c d? mái che nh?n t? Web
-/* Bi?n qu?n lý ch?n doán l?i tr?m bom th?c t? */
-volatile uint8_t g_pump_diagnostic = 0; // 0: Bình thu?ng, 1: Ch?y khô, 2: Quá t?i
-
-/* ===== UART debug ===== */
-static void UART1_Init(uint32_t baudrate)
-{
-    GPIO_InitTypeDef gpio;
-    USART_InitTypeDef uart;
-
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1 | RCC_APB2Periph_GPIOA, ENABLE);
-
-    // TX PA9
-    gpio.GPIO_Pin = GPIO_Pin_9;
-    gpio.GPIO_Mode = GPIO_Mode_AF_PP;
-    gpio.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_Init(GPIOA, &gpio);
-
-    // RX PA10
-    gpio.GPIO_Pin = GPIO_Pin_10;
-    gpio.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-    GPIO_Init(GPIOA, &gpio);
-
-    uart.USART_BaudRate = baudrate;
-    uart.USART_WordLength = USART_WordLength_8b;
-    uart.USART_StopBits = USART_StopBits_1;
-    uart.USART_Parity = USART_Parity_No;
-    uart.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
-    uart.USART_Mode = USART_Mode_Tx | USART_Mode_Rx;
-    USART_Init(USART1, &uart);
-    USART_Cmd(USART1, ENABLE);
-}
-
-static void UART_SendChar(char c)
-{
-    while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);
-    USART_SendData(USART1, c);
-}
-
-static void UART_SendString(const char *s)
-{
-    while (s && *s)
-        UART_SendChar(*s++);
-}
-
-static void debug_log(const char *fmt, ...)
-{
-    char buf[128];
-    va_list ap;
-
-    va_start(ap, fmt);
-    vsnprintf(buf, sizeof(buf), fmt, ap);
-    va_end(ap);
-    UART_SendString(buf);
-}
-
-/** Heartbeat every ~5 s on TIM4 (free-running; TIM2 reserved for delay.c). */
-static void debug_heartbeat(void)
-{
-    static uint32_t acc_us;
-    static uint16_t last_tick;
-    static uint8_t primed;
-    uint16_t now;
-    uint32_t delta;
-
-    now = (uint16_t)TIM_GetCounter(TIM4);
-
-    if (!primed) {
-        last_tick = now;
-        primed = 1;
-        return;
-    }
-
-    if (now >= last_tick)
-        delta = (uint32_t)(now - last_tick);
-    else
-        delta = (uint32_t)(0x10000u - last_tick + now);
-
-    last_tick = now;
-    acc_us += delta;
-
-    if (acc_us >= 5000000UL) {
-        acc_us -= 5000000UL;
-        debug_log("[Status] alive, listening (node 0x%02X)\r\n",
-                  (unsigned)MY_NODE_ID);
-    }
-}
-
-static void LED_Init(void)
-{
-    GPIO_InitTypeDef gpioInit;
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
-    gpioInit.GPIO_Mode = GPIO_Mode_Out_PP;
-    gpioInit.GPIO_Pin = GPIO_Pin_13;
-    gpioInit.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_Init(GPIOC, &gpioInit);
-    GPIO_SetBits(GPIOC, GPIO_Pin_13);
-}
-void LED_Blink(void) {
-    if (GPIO_ReadOutputDataBit(GPIOC, GPIO_Pin_13) == SET) {
-        GPIO_ResetBits(GPIOC, GPIO_Pin_13);
-    } else {
-        GPIO_SetBits(GPIOC, GPIO_Pin_13);
-    }
-}
-
-/**
- * Read sensors and fill lora_sensor_payload_t for CMD_SENSOR_DATA reply.
- */
-static uint8_t my_read_sensor(uint8_t *payload, uint8_t max_len)
-{
-    lora_sensor_payload_t sample;
-    uint8_t temp = 0;
-    uint8_t humi = 0;
-    Analog_Data_t analog_sensor_data;
-
-    if (max_len < sizeof(sample)) {
-        debug_log("[Sensor] read failed: buffer too small (%u)\r\n",
-                  (unsigned)max_len);
-        return 0;
-    }
-
-    memset(&sample, 0, sizeof(sample));
-    //doc DHT11
-    if (DHT11_ReadData(&temp, &humi) == DHT11_OK) {
-        sample.temperature_c10 = (int16_t)temp * 10;
-        sample.humidity_pct10 = (uint16_t)humi * 10;
-    }
-
-    // 2. Ð?c nhóm c?m bi?n ADC g?p (Ð? ?m d?t, M?c nu?c, Dòng di?n)
-    Analog_UpdateAll(&analog_sensor_data);
-    sample.soil_moisture = (uint16_t)analog_sensor_data.soil_percent;
-    sample.water_level   = (uint16_t)analog_sensor_data.water_percent;
-    sample.current_mA    = (uint16_t)(analog_sensor_data.current_ampe * 1000.0f); // Quy d?i A -> mA
-        
-    // 3. Ð?c c?m bi?n mua (Digital)
-    sample.rain_status = Rain_Read();
-
-    // 4. Ð?c c?m bi?n luu lu?ng nu?c (Tính toán d?a trên th?i gian l?y m?u, ví d? 1000ms)
-    // Ð? chính xác, ? dây l?y m?u t?m th?i 1000ms ho?c b?n có th? t?i uu theo th?i gian th?c vòng l?p
-    float flow_real = Flow_GetLitersPerMinute(1000); 
-    sample.flow_rate_Lmin_x10 = (uint8_t)(flow_real * 10.0f);
-
-    /* ================================================================== */
-    /* ?? THÊM: Ð?NG B? NGU?C TR?NG THÁI TH?C T? T?I VU?N LÊN WEB GUI     */
-    /* ================================================================== */
-    sample.system_mode = g_system_control.system_mode;
-    sample.pump_status = g_system_control.pump_status;
-    sample.roof_status = g_system_control.roof_status;
-		
-		sample.pump_diagnostic = g_pump_diagnostic;
-
-    // In log debug ra UART1 d? giám sát t?i ch?
-    debug_log("[Sensor] Temp=%d|Hum=%u|Soil=%u%%|Water=%u%%|Current=%umA|Rain=%s|Flow=%.1f L/m\r\n",
-              (int)sample.temperature_c10/10,
-              (unsigned)sample.humidity_pct10/10,
-              (unsigned)sample.soil_moisture,
-              (unsigned)sample.water_level,
-              (unsigned)sample.current_mA,
-              (sample.rain_status == 0) ? "YES" : "NO",
-              flow_real);
-
-    memcpy(payload, &sample, sizeof(sample));
-    return (uint8_t)sizeof(sample);
-}
-
-// ===== MAIN =====
-int main(void) {
-    LED_Init();
-
-    UART1_Init(115200);
-    UART_SendString("\r\n===== STM32 LoRa Slave Node (Updated) =====\r\n");
-    debug_log("[Boot] UART1 115200 OK\r\n");
-
-    debug_log("[Boot] TIM2 (delay) init...\r\n");
-    TIM2_Init();
-    debug_log("[Boot] TIM4 (heartbeat) init...\r\n");
-    TIM4_HeartbeatInit();
-    debug_log("[Boot] timers OK\r\n");
-
-    debug_log("[Boot] DHT11 init...\r\n");
-    DHT11_Init();
-    debug_log("[Boot] DHT11 OK\r\n");
-
-    // --- Ð?I KHÚC NÀY THÀNH FILE G?P ANALOG M?I ---
-    debug_log("[Boot] Analog ADC channels init...\r\n");
-    Analog_Init(); 
-    debug_log("[Boot] Calibrating ACS712 Current Sensor...\r\n");
-    Analog_Calibrate(); // T? d?ng l?y di?m 0 dòng di?n lúc kh?i d?ng
-    debug_log("[Boot] Analog ADC OK\r\n");
-    // ----------------------------------------------
-
-    // --- THÊM CÁC C?M BI?N M?I KH?I T?O ? ÐÂY ---
-    debug_log("[Boot] Rain sensor init...\r\n");
-    Rain_Init();
-    
-    debug_log("[Boot] Flow sensor init...\r\n");
-    Motor_Init();
-    FlowSensor_Init(); // Ðã gi?i phóng chân PB4 bên trong hàm
-    
-    // --- THÊM: Kh?i t?o h? th?ng Menu nút b?m và màn hình LCD ---
-    debug_log("[Boot] Menu Button & LCD init...\r\n");
-    Menu_Init(); 
-    // --------------------------------------------
-
-    Delay_Ms(100);
-
-    {
-        uint8_t payload[LORA_MAX_PAYLOAD];
-        debug_log("[Boot] Sensor snapshot:\r\n");
-        my_read_sensor(payload, sizeof(payload));
-    }
-
-    debug_log("[Boot] LoRa radio init...\r\n");
-    if (!lora_radio_begin()) {
-        UART_SendString("[Boot] ERROR: lora_radio_begin failed\r\n");
-        while (1) { }
-    }
-
-    debug_log("[Boot] Radio OK  node=0x%02X  gateway=0x%02X\r\n",
-              (unsigned)MY_NODE_ID, (unsigned)GATEWAY_ID);
-    debug_log("[Boot] Entering main loop (continuous RX)\r\n");
-
-    {
-        const lora_node_config_t cfg = {
-            .node_id = MY_NODE_ID,
-            .gateway_id = GATEWAY_ID,
-            .log = debug_log,
-        };
-
-        const lora_node_radio_t radio = {
-            .send = lora_radio_send,
-            .rx_pending = lora_radio_rx_pending,
-            .receive = lora_radio_receive,
-            .read_sensor = my_read_sensor,
-        };
-
-        lora_node_t node;
-        lora_node_init(&node, &cfg, &radio);
-
-        while (1) {
-										// ==================================================================
-										// LAY MAU CAM BIEN TAP TRUNG (CHI DOC 1 LAN DUY NHAT CHO TOAN BO VONG LAP)
-										// ==================================================================
-										Analog_Data_t shared_adc_data;
-										Analog_UpdateAll(&shared_adc_data); // Doc tat ca kenh ADC (Do am, Muc nuoc, Dong dien)
-										
-										// Tinh toan nhanh dong dien (mA) va luu luong tu du lieu vua doc
-										uint16_t current_now_mA = (uint16_t)(shared_adc_data.current_ampe * 1000.0f);
-										float flow_now = Flow_GetLitersPerMinute(20); // Lay mau nhanh phan hoi luu luong nuoc
-
-										// ------------------------------------------------------------------
-										// A. THEM: LUON QUET NUT BAM VAT LY NGOAI VUON DE CAP NHAT TRANG THAI
-										// ------------------------------------------------------------------
-										Menu_Button_Scan(&g_system_control, &g_lcd_update);
-
-										// 1. Luon luon quet song LoRa de nhan du lieu
-										lora_node_poll(&node);
-										
-										// 2. Kiem tra xem co lenh nut nhan moi tu Web do xuong khong
-										if (g_control_updated) {
-												g_control_updated = 0; // Xoa co ngay lap tuc de tranh xu ly lap
-												
-												debug_log("[Hardware] Thuc thi lenh dieu khien tu Web...\r\n");
-												
-												/* ================================================================== */
-												/* DONG BO LENH WEB VAO BO DIEU KHIEN TRUNG TAM                        */
-												/* ================================================================== */
-												g_system_control.system_mode = g_remote_control.system_mode;
-												g_system_control.pump_status = g_remote_control.pump_status;
-												g_system_control.roof_status = g_remote_control.roof_status;
-												current_roof_pwm = g_remote_control.roof_pwm; // Nhan them PWM tu Web
-												g_lcd_update = 1; // Danh dau bat buoc update lai LCD
-
-												// Nhap nhay den LED PC13 de bao hieu xu ly lenh thanh cong
-												LED_Blink();
-										}
-
-										// ------------------------------------------------------------------
-										// B. THEM: LOGIC TU DONG (Su dung truc tiep du lieu tap trung o dau loop)
-										// ------------------------------------------------------------------
-										if (g_system_control.system_mode == 1) {
-																		uint8_t old_pump = g_system_control.pump_status;
-																		
-																		// 1. Tu dong dieu khien BOM dua theo do am dat
-																		if (shared_adc_data.soil_percent < 30) {
-																				g_system_control.pump_status = 1; // Dat kho -> Bat bom
-																		} else if (shared_adc_data.soil_percent > 80) {
-																				g_system_control.pump_status = 0; // Du am -> Tat bom
-																		}
-
-																		// C?p nh?t LCD cho bom n?u tr?ng thái bom thay d?i
-																		if (old_pump != g_system_control.pump_status) {
-																				g_lcd_update = 1;
-																		}
-
-																		// 2. Tu dong dieu khien MAI CHE dua vao cam bien mua & cong tac hanh trinh (?NH ÐEN CHU?N)
-																		if (Rain_Read() == 0) { // Ðang MUA -> Mu?n ÐÓNG mái
-																				// Ch? ra l?nh ÐÓNG n?u hi?n t?i mái chua ? tr?ng thái ÐÓNG 
-																				// VÀ công t?c hành trình ÐÓNG (PB8) chua b? ch?m (m?c 1 là chua ch?m)
-																				if (g_system_control.roof_status != MOTOR_BACKWARD && GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_8) == Bit_SET) {
-																						g_system_control.roof_status = MOTOR_BACKWARD;
-																						g_lcd_update = 1; // D?ng c? v? LCD 1 l?n duy nh?t khi b?t d?u ch?y
-																				}
-																		} else { // T?nh mua -> Mu?n M? mái
-																				// Ch? ra l?nh M? n?u hi?n t?i mái chua ? tr?ng thái M? 
-																				// VÀ công t?c hành trình M? (PB7) chua b? ch?m (m?c 1 là chua ch?m)
-																				if (g_system_control.roof_status != MOTOR_FORWARD && GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_7) == Bit_SET) {
-																						g_system_control.roof_status = MOTOR_FORWARD;
-																						g_lcd_update = 1; // D?ng c? v? LCD 1 l?n duy nh?t khi b?t d?u ch?y
-																				}
-																		}
-																}
-
-										// ------------------------------------------------------------------
-										// C. THEM: LOGIC CHAN DOAN LOI BAO VE BOM (Chi chay khi bom dang bat)
-										// ------------------------------------------------------------------
-										if (g_system_control.pump_status == 1) {
-												
-												// Truong hop A: Dong dien vuot nguong an toan (> 2A) -> Bom ket / Qua tai
-												if (current_now_mA > 2000) {
-														g_pump_diagnostic = 2; // Ma loi: Overload
-														g_system_control.pump_status = 0; // Hanh dong: Ngat bom vat ly khan cap
-														g_lcd_update = 1;
-														debug_log("[ALERT] Overload detected (%u mA)! Hard shutdown pump.\r\n", current_now_mA);
-												}
-
-												// Truong hop B: Dong cuc thap hoac khong co nuoc chay qua -> Chay kho / Hut nuoc
-												else if (current_now_mA < 100 || flow_now < 0.2f) {
-														g_pump_diagnostic = 1; // Ma loi: Dry-run
-														g_system_control.pump_status = 0; // Hanh dong: Ngat bom tranh chay may
-														g_lcd_update = 1;
-														debug_log("[ALERT] Dry-run detected! Hard shutdown pump.\r\n");
-												}
-
-												// Truong hop C: Moi thu on dinh
-												else {
-														g_pump_diagnostic = 0; // Trang thai: Binh thuong
-												}
-
-										} else {
-
-												// Neu nguoi dung chu dong tat bom (bang tay hoac qua Web),
-												// reset trang thai loi cu de san sang cho lan van hanh tiep theo
-												if (g_pump_diagnostic != 1 && g_pump_diagnostic != 2) {
-														g_pump_diagnostic = 0;
-												}
-										}
-
-										// ------------------------------------------------------------------
-										// D. XUAT DAU RA PHAN CUNG THAT THEO BIEN TRUNG TAM
-										// ------------------------------------------------------------------
-                    Motor_Roof_Safety_Supervisor((uint8_t *)&g_system_control.roof_status, &g_lcd_update);
-										/* ---------------- A. DIEU KHIEN MAY BOM ---------------- */
-
-										if (g_system_control.pump_status == 1) {
-												Pump_On();
-												debug_log("-> Phan cung: BAT BOM (Dong: %u mA | Luu luong: %.1f L/m)\r\n",
-																	current_now_mA, flow_now);
-										} else {
-												Pump_Off();
-												debug_log("-> Phan cung: TAT BOM\r\n");
-										}
-
-										/* ---------------- B. DIEU KHIEN MAI CHE ---------------- */
-
-										Motor1_Dir(g_system_control.roof_status);
-
-										if (g_system_control.roof_status == MOTOR_FORWARD) {
-												Motor1_SetSpeed(current_roof_pwm);
-												debug_log("-> Phan cung: MO MAI CHE - PWM: %u%%\r\n", current_roof_pwm);
-
-										} else if (g_system_control.roof_status == MOTOR_BACKWARD) {
-												Motor1_SetSpeed(current_roof_pwm);
-												debug_log("-> Phan cung: DONG MAI CHE - PWM: %u%%\r\n", current_roof_pwm);
-
-										} else {
-												Motor1_SetSpeed(0);
-												debug_log("-> Phan cung: DUNG MAI CHE\r\n");
-										}
-
-										/* ------------- C. DONG BO CHE DO HE THONG ------------- */
-
-										if (g_system_control.system_mode == 1) {
-												debug_log("-> He thong dang o che do: TU DONG (Auto)\r\n");
-										} else {
-												debug_log("-> He thong dang o che do: THU CONG (Manual)\r\n");
-										}
-
-										// ------------------------------------------------------------------
-										// E. THEM: CAP NHAT GIAO DIEN MAN HINH LCD KHI CO THAY DOI
-										// ------------------------------------------------------------------
-
-										if (g_lcd_update) {
-												Menu_Display_Update(&g_system_control);
-												g_lcd_update = 0; // Xoa co sau khi cap nhat man hinh xong
-										}
-
-										// 3. Giu nhip dap heartbeat giam sat tai cho
-										debug_heartbeat();
-
-										// Chong loop quay qua nhanh gay doi phim khi quet nut
-										Delay_Ms(20);
-        }
-    }
-}
-/////////////////////////////////main-da co logic nhung goi (2 lan cac ham doc cam bien)/////////////////////////////
-
-///* Bi?n toàn c?c luu tr?ng thái nút nh?n nh?n t? LoRa Gateway */
+///* Bi?n to?n c?c luu tr?ng th?i n?t nh?n nh?n t? LoRa Gateway */
 //volatile lora_control_payload_t g_remote_control;
-//volatile uint8_t g_control_updated = 0; // C? báo hi?u có l?nh m?i
+//volatile uint8_t g_control_updated = 0; // C? b?o hi?u c? l?nh m?i
+//extern volatile uint8_t g_ack_pending;
 
-///* B? Ð?M C?M BI?N TOÀN C?C: Kh?c ph?c tri?t d? vi?c ngh?n c? chai khi d?c ph?n c?ng */
-//volatile lora_sensor_payload_t g_sensor_cache = {0};
-
-///* Bi?n qu?n lý tr?ng thái th?c t? t?i vu?n */
+///* ========================================================================== */
+///* ?? TH?M: BI?N TO?N C?C QU?N L? TR?NG TH?I TH?C T? T?I VU?N                 */
+///* ========================================================================== */
 //menu_control_data_t g_system_control = {
-//    .system_mode = 0, // Ban d?u: 0 = MANUAL, 1 = AUTO
+//    /* Boot MANUAL: tranh Auto bat bom khi ADC dat noi -> PWM nhi?u -> mat LoRa luc demo */
+//    .system_mode = 0, // 0 = MANUAL, 1 = AUTO
 //    .pump_status = 0, // 0 = OFF, 1 = ON
 //    .roof_status = 0  // 0 = STOP, MOTOR_FORWARD = OPEN, MOTOR_BACKWARD = CLOSE
 //};
-//uint8_t g_lcd_update = 1;       // C? báo hi?u c?n v? l?i màn hình LCD
-//uint8_t current_roof_pwm = 100; // Luu t?c d? mái che nh?n t? Web
+//uint8_t g_lcd_update = 1; // C? b?o hi?u c?n v? l?i m?n h?nh LCD
+//uint8_t current_roof_pwm = 100; // Luu t?c d? m?i che nh?n t? Web
+///* Bi?n qu?n l? ch?n do?n l?i tr?m bom th?c t? */
+//uint8_t current_pump_pwm = 100;
+//volatile pump_diagnostic_t g_pump_diagnostic = PUMP_DIAG_OK;
 
-///* Bi?n qu?n lý ch?n doán l?i tr?m bom th?c t? */
-//volatile uint8_t g_pump_diagnostic = 0; // 0: Bình thu?ng, 1: Ch?y khô, 2: Quá t?i
+///* Sau khi bat bom: cho nuoc/dong on dinh roi moi check DRY_RUN/OVERLOAD */
+//#define PUMP_PROTECT_GRACE_MS  2000u
+//static uint8_t s_prev_pump_on = 0;
+//static uint32_t s_pump_on_since_ms = 0;
+
+///* === Bi?n t?m d? truy?n ADC data d?n h?m callback LoRa === */
+//static Analog_Data_t g_current_adc_data = {0};
+
+//#define WATER_EMPTY_PERCENT  10
+//uint8_t g_soil_on_threshold = 30;
+//uint8_t g_soil_off_threshold = 80;
+//static uint8_t g_runtime_node_id = 0;
+
+//static uint8_t read_dip_node_id(void)
+//{
+//    GPIO_InitTypeDef gpio;
+//    uint8_t b0, b1, b2, dip;
+
+//    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB | RCC_APB2Periph_AFIO, ENABLE);
+//    GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);
+
+//    gpio.GPIO_Mode = GPIO_Mode_IPD;
+//    gpio.GPIO_Speed = GPIO_Speed_2MHz;
+//    gpio.GPIO_Pin = GPIO_Pin_9 | GPIO_Pin_6 | GPIO_Pin_3;
+//    GPIO_Init(GPIOB, &gpio);
+
+//    b0 = GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_9) == Bit_SET ? 1 : 0;
+//    b1 = GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_6) == Bit_SET ? 1 : 0;
+//    b2 = GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_3) == Bit_SET ? 1 : 0;
+//    dip = (uint8_t)(b0 | (b1 << 1) | (b2 << 2));
+
+//    if (dip == 0) {
+//        return (uint8_t)MY_NODE_ID;
+//    }
+//    return (uint8_t)(0x10 | dip);
+//}
+
+//static void clamp_pump_for_water(uint8_t *pump_status, uint8_t water_percent)
+//{
+//    if (*pump_status != 0 && water_percent < WATER_EMPTY_PERCENT) {
+//        *pump_status = 0;
+//    }
+//}
+
+
 
 ///* ===== UART debug ===== */
 //static void UART1_Init(uint32_t baudrate)
@@ -799,8 +427,34 @@ int main(void) {
 //    va_end(ap);
 //    UART_SendString(buf);
 //}
+//#if CONTROL_TEST_DEBUG
+//static void debug_print_control_rx(const lora_control_payload_t *cmd)
+//{
+//    const char *roof_str = (cmd->roof_status == 1) ? "OPEN" :
+//                           (cmd->roof_status == 2) ? "CLOSE" : "STOP";
+//    debug_log("\r\n========== [CTRL-RX] LENH TU WEB ==========\r\n");
+//    debug_log("  mode      : %s\r\n", cmd->system_mode ? "AUTO" : "MANUAL");
+//    debug_log("  pump      : %s\r\n", cmd->pump_status ? "BAT" : "TAT");
+//    debug_log("  pump_pwm  : %u%%\r\n", (unsigned)cmd->pump_pwm);
+//    debug_log("  roof      : %s\r\n", roof_str);
+//    debug_log("  roof_pwm  : %u%%\r\n", (unsigned)cmd->roof_pwm);
+//    debug_log("============================================\r\n");
+//}
 
-///** Heartbeat every ~5 s on TIM4 */
+//static void debug_print_control_ack(const lora_control_payload_t *ack)
+//{
+//    const char *roof_str = (ack->roof_status == 1) ? "OPEN" :
+//                           (ack->roof_status == 2) ? "CLOSE" : "STOP";
+//    debug_log("\r\n========== [ACK-TX] GUI LEN ESP ==========\r\n");
+//    debug_log("  mode      : %s\r\n", ack->system_mode ? "AUTO" : "MANUAL");
+//    debug_log("  pump      : %s\r\n", ack->pump_status ? "BAT" : "TAT");
+//    debug_log("  pump_pwm  : %u%%\r\n", (unsigned)ack->pump_pwm);
+//    debug_log("  roof      : %s\r\n", roof_str);
+//    debug_log("  roof_pwm  : %u%%\r\n", (unsigned)ack->roof_pwm);
+//    debug_log("============================================\r\n");
+//}
+//#endif
+///** Heartbeat every ~5 s on TIM4 (free-running; TIM2 reserved for delay.c). */
 //static void debug_heartbeat(void)
 //{
 //    static uint32_t acc_us;
@@ -827,7 +481,8 @@ int main(void) {
 
 //    if (acc_us >= 5000000UL) {
 //        acc_us -= 5000000UL;
-//        debug_log("[Status] alive, listening (node 0x%02X)\r\n", (unsigned)MY_NODE_ID);
+//        debug_log("[HB] 0x%02X\r\n",
+//                  (unsigned)g_runtime_node_id);
 //    }
 //}
 
@@ -841,7 +496,6 @@ int main(void) {
 //    GPIO_Init(GPIOC, &gpioInit);
 //    GPIO_SetBits(GPIOC, GPIO_Pin_13);
 //}
-
 //void LED_Blink(void) {
 //    if (GPIO_ReadOutputDataBit(GPIOC, GPIO_Pin_13) == SET) {
 //        GPIO_ResetBits(GPIOC, GPIO_Pin_13);
@@ -851,235 +505,926 @@ int main(void) {
 //}
 
 ///**
-// * HÀM CALLBACK LORA: T?c d? cao, ch? b?c d? li?u t? Cache ném di
+// * Read sensors and fill lora_sensor_payload_t for CMD_SENSOR_DATA reply.
+// * ?? FIX: S? d?ng ADC data d? d?c s?n t? g_current_adc_data
 // */
 //static uint8_t my_read_sensor(uint8_t *payload, uint8_t max_len)
 //{
-//    if (max_len < sizeof(lora_sensor_payload_t)) {
-//        debug_log("[Sensor] read failed: buffer too small (%u)\r\n", (unsigned)max_len);
+//    lora_sensor_payload_t sample;
+//    uint8_t temp = 0;
+//    uint8_t humi = 0;
+
+//    if (max_len < sizeof(sample)) {
+//        debug_log("[S] buf small %u\r\n",
+//          (unsigned)max_len);
 //        return 0;
 //    }
 
-//    // C?p nh?t tr?ng thái h? th?ng vào Cache tru?c khi g?i
-//    g_sensor_cache.system_mode = g_system_control.system_mode;
-//    g_sensor_cache.pump_status = g_system_control.pump_status;
-//    g_sensor_cache.roof_status = g_system_control.roof_status;
-//    g_sensor_cache.pump_diagnostic = g_pump_diagnostic;
+//    memset(&sample, 0, sizeof(sample));
+//    
+//    // 1. ??c DHT11
+//    if (DHT11_ReadData(&temp, &humi) == DHT11_OK) {
+//        sample.temperature_c10 = (int16_t)temp * 10;
+//        sample.humidity_pct10 = (uint16_t)humi * 10;
+//    }
 
-//    // In log debug ra UART1
-//    debug_log("[LoRa TX] Temp=%d|Hum=%u|Soil=%u%%|Water=%u%%|Current=%umA|Rain=%s|Flow=%u (x0.1 L/m)\r\n",
-//              (int)g_sensor_cache.temperature_c10/10,
-//              (unsigned)g_sensor_cache.humidity_pct10/10,
-//              (unsigned)g_sensor_cache.soil_moisture,
-//              (unsigned)g_sensor_cache.water_level,
-//              (unsigned)g_sensor_cache.current_mA,
-//              (g_sensor_cache.rain_status == 0) ? "YES" : "NO",
-//              (unsigned)g_sensor_cache.flow_rate_Lmin_x10);
+//    // 2. ?? D?NG D? LI?U ADC ?? ??C S?N (kh?ng d?c l?i)
+//    sample.soil_moisture = (uint16_t)g_current_adc_data.soil_percent;
+//    sample.water_level   = (uint16_t)g_current_adc_data.water_percent;
+//    sample.current_mA    = (uint16_t)(g_current_adc_data.current_ampe * 1000.0f);
+//    
+//    // 3. ??c c?m bi?n mua (Digital)
+//    sample.rain_status = Rain_Read();
 
-//    // B?c d? li?u t? cache vào payload
-//    memcpy(payload, (void*)&g_sensor_cache, sizeof(lora_sensor_payload_t));
-//    return (uint8_t)sizeof(lora_sensor_payload_t);
+//    // 4. Doc flow (TIM3_CH1 IC, chung TIM3 voi PWM mai) — cache ~500ms
+//    uint16_t flow_x10 = Flow_GetLpmX10();
+//    sample.flow_rate_Lmin_x10 = (uint8_t)((flow_x10 > 255u) ? 255u : flow_x10);
+
+//    // 5. ??ng b? tr?ng th?i th?c t? t?i vu?n l?n Web
+//    sample.system_mode = g_system_control.system_mode;
+//    sample.pump_status = g_system_control.pump_status;
+//    sample.roof_status = g_system_control.roof_status;
+//    sample.pump_diagnostic = (uint8_t)g_pump_diagnostic;
+
+//    // Debug log (không dùng %.1f — tránh kéo lib printf float vu?t 32KB Keil Lite)
+//    debug_log("[S] T=%d H=%u S=%u W=%u I=%u R=%s F=%u.%u\r\n",
+//              (int)sample.temperature_c10/10,
+//              (unsigned)sample.humidity_pct10/10,
+//              (unsigned)sample.soil_moisture,
+//              (unsigned)sample.water_level,
+//              (unsigned)sample.current_mA,
+//              (sample.rain_status == 0) ? "Y" : "N",
+//              (unsigned)(sample.flow_rate_Lmin_x10 / 10),
+//              (unsigned)(sample.flow_rate_Lmin_x10 % 10));
+
+//    memcpy(payload, &sample, sizeof(sample));
+//    return (uint8_t)sizeof(sample);
 //}
 
+///**
+// * Wrapper function: G?i my_read_sensor (kh?ng c?n tham s? ADC v? d?ng global)
+// */
+//static uint8_t my_read_sensor_wrapper(uint8_t *payload, uint8_t max_len) {
+//    return my_read_sensor(payload, max_len);  // ? Ch? 2 tham s?
+//}
 //// ===== MAIN =====
 //int main(void) {
 //    LED_Init();
 
 //    UART1_Init(115200);
-//    UART_SendString("\r\n===== STM32 LoRa Slave Node (Optimized) =====\r\n");
+//    UART_SendString("\r\n===== STM32 LoRa Slave Node (Updated) =====\r\n");
 //    debug_log("[Boot] UART1 115200 OK\r\n");
 
 //    debug_log("[Boot] TIM2 (delay) init...\r\n");
 //    TIM2_Init();
 //    debug_log("[Boot] TIM4 (heartbeat) init...\r\n");
 //    TIM4_HeartbeatInit();
+//    debug_log("[Boot] timers OK\r\n");
 
-//    debug_log("[Boot] DHT11 init...\r\n");
+//    debug_log("[Boot] DHT\r\n");
 //    DHT11_Init();
+//    debug_log("[Boot] DHT OK\r\n");
 
-//    debug_log("[Boot] Analog ADC channels init...\r\n");
+//    // --- ??I KH?C N?Y TH?NH FILE G?P ANALOG M?I ---
+//    debug_log("[Boot] Analog\r\n");
 //    Analog_Init(); 
-//    debug_log("[Boot] Calibrating ACS712 Current Sensor...\r\n");
+//    debug_log("[Boot] ACS712 calib\r\n");
 //    Analog_Calibrate();
+//    debug_log("[Boot] Analog OK\r\n");
 
-//    debug_log("[Boot] Rain sensor init...\r\n");
+//    debug_log("[Boot] Rain\r\n");
 //    Rain_Init();
 //    
-//    debug_log("[Boot] Motor & Flow sensor init...\r\n");
+//    debug_log("[Boot] Flow+Motor\r\n");
 //    Motor_Init();
 //    FlowSensor_Init();
 //    
-//    debug_log("[Boot] Menu Button & LCD init...\r\n");
+//    debug_log("[Boot] Menu/LCD\r\n");
 //    Menu_Init(); 
 
 //    Delay_Ms(100);
 
-//    debug_log("[Boot] LoRa radio init...\r\n");
+//    {
+//        uint8_t payload[LORA_MAX_PAYLOAD];
+//        debug_log("[Boot] Snap\r\n");
+//        my_read_sensor(payload, sizeof(payload));
+//    }
+
+//    g_runtime_node_id = read_dip_node_id();
+//    debug_log("[Boot] Node 0x%02X\r\n", (unsigned)g_runtime_node_id);
+
+//    debug_log("[Boot] LoRa\r\n");
 //    if (!lora_radio_begin()) {
-//        UART_SendString("[Boot] ERROR: lora_radio_begin failed\r\n");
+//        UART_SendString("[Boot] ERR radio\r\n");
 //        while (1) { }
 //    }
 
-//    debug_log("[Boot] Radio OK  node=0x%02X  gateway=0x%02X\r\n", (unsigned)MY_NODE_ID, (unsigned)GATEWAY_ID);
-//    debug_log("[Boot] Entering main loop\r\n");
+//    debug_log("[Boot] OK n=0x%02X gw=0x%02X\r\n",
+//              (unsigned)g_runtime_node_id, (unsigned)GATEWAY_ID);
+//    debug_log("[Boot] loop\r\n");
 
-//    const lora_node_config_t cfg = {
-//        .node_id = MY_NODE_ID,
-//        .gateway_id = GATEWAY_ID,
-//        .log = debug_log,
-//    };
+//    {
+//        const lora_node_config_t cfg = {
+//            .node_id = g_runtime_node_id,
+//            .gateway_id = GATEWAY_ID,
+//            .log = debug_log,
+//        };
 
-//    const lora_node_radio_t radio = {
-//        .send = lora_radio_send,
-//        .rx_pending = lora_radio_rx_pending,
-//        .receive = lora_radio_receive,
-//        .read_sensor = my_read_sensor,
-//    };
+//        const lora_node_radio_t radio = {
+//            .send = lora_radio_send,
+//            .rx_pending = lora_radio_rx_pending,
+//            .receive = lora_radio_receive,
+//            .read_sensor = my_read_sensor_wrapper,
+//        };
 
-//    lora_node_t node;
-//    lora_node_init(&node, &cfg, &radio);
+//        lora_node_t node;
+//        lora_node_init(&node, &cfg, &radio);
 
-//    // Bi?n d?m ph?c v? d?nh th?i l?y m?u c?m bi?n
-//    static uint8_t flow_timer_count = 0;
-//    static uint8_t dht11_timer_count = 0;
+//        while(1){
+//										// ==================================================================
+//										// LAY MAU CAM BIEN TAP TRUNG (CHI DOC 1 LAN DUY NHAT CHO TOAN BO VONG LAP)
+//										// ==================================================================
+//										Analog_Data_t shared_adc_data;
+//										Analog_UpdateAll(&shared_adc_data); // Doc tat ca kenh ADC (Do am, Muc nuoc, Dong dien)
+//					          g_current_adc_data = shared_adc_data;
+//										
+//										// Tinh toan nhanh dong dien (mA) va luu luong tu du lieu vua doc
+//										uint16_t current_now_mA = (uint16_t)(shared_adc_data.current_ampe * 1000.0f);
+//										/* Flow TIM3_CH1 (chung PWM mai CH4) — cache L/min*10 */
+//										uint16_t flow_now_x10 = Flow_GetLpmX10();
 
-//    while (1) {
-//        /* ================================================================== */
-//        /* 1. C?P NH?T D? LI?U C?M BI?N VÀO CACHE TOÀN C?C                    */
-//        /* ================================================================== */
-//        
-//        // Ð?c ADC (Nhanh)
-//        Analog_Data_t adc_data;
-//        Analog_UpdateAll(&adc_data);
-//        g_sensor_cache.soil_moisture = (uint16_t)adc_data.soil_percent;
-//        g_sensor_cache.water_level   = (uint16_t)adc_data.water_percent;
-//        g_sensor_cache.current_mA    = (uint16_t)(adc_data.current_ampe * 1000.0f);
-//        
-//        // Ð?c c?m bi?n mua (Nhanh)
-//        g_sensor_cache.rain_status = Rain_Read();
+//										// ------------------------------------------------------------------
+//										// A. THEM: LUON QUET NUT BAM VAT LY NGOAI VUON DE CAP NHAT TRANG THAI
+//										// ------------------------------------------------------------------
+//										Menu_Button_Scan(&g_system_control, &g_lcd_update);
 
-//        // Tính luu lu?ng (Chu k? ~1 giây = 50 vòng l?p x 20ms)
-//        flow_timer_count++;
-//        if (flow_timer_count >= 50) {
-//            float flow = Flow_GetLitersPerMinute(1000); 
-//            g_sensor_cache.flow_rate_Lmin_x10 = (uint8_t)(flow * 10.0f);
-//            flow_timer_count = 0;
+//										// 1. Luon luon quet song LoRa de nhan du lieu
+//										lora_node_poll(&node);
+//										
+//										// 2. Kiem tra xem co lenh nut nhan moi tu Web do xuong khong
+//										if (g_control_updated) {
+//												g_control_updated = 0; // Xoa co ngay lap tuc de tranh xu ly lap
+//												
+//												//debug_log("[Hardware] Thuc thi lenh dieu khien tu Web...\r\n");
+//												
+//												/* ================================================================== */
+//												/* DONG BO LENH WEB VAO BO DIEU KHIEN TRUNG TAM                        */
+//												/* ================================================================== */
+//												g_system_control.system_mode = g_remote_control.system_mode;
+//												g_system_control.pump_status = g_remote_control.pump_status;
+//												clamp_pump_for_water(&g_system_control.pump_status, shared_adc_data.water_percent);
+//												g_system_control.roof_status = g_remote_control.roof_status;
+//												current_roof_pwm = g_remote_control.roof_pwm; // Nhan them PWM tu Web
+//											    current_pump_pwm = g_remote_control.pump_pwm;
+//                                                #if CONTROL_TEST_DEBUG
+//                                                    debug_print_control_rx((const lora_control_payload_t*)&g_remote_control);
+//                                                #endif
+//												g_lcd_update = 1; // Danh dau bat buoc update lai LCD
+
+//												// Nhap nhay den LED PC13 de bao hieu xu ly lenh thanh cong
+//												LED_Blink();
+//										}
+
+//										// ------------------------------------------------------------------
+//										// B. THEM: LOGIC TU DONG (Su dung truc tiep du lieu tap trung o dau loop)
+//										// ------------------------------------------------------------------
+//										if (g_system_control.system_mode == 1) {
+//												uint8_t old_pump = g_system_control.pump_status;
+//												
+//												// 1. Tu dong dieu khien BOM dua theo do am dat
+//												// Sau loi bao ve: KHONG bat lai bom moi vong (tranh PWM nhay -> mat LoRa)
+//												if (shared_adc_data.soil_percent < g_soil_on_threshold) {
+//														if (g_pump_diagnostic != PUMP_DIAG_DRY_RUN
+//																&& g_pump_diagnostic != PUMP_DIAG_OVERLOAD
+//																&& g_pump_diagnostic != PUMP_DIAG_WATER_EMPTY) {
+//																g_system_control.pump_status = 1; // Dat kho -> Bat bom
+//														} else {
+//																g_system_control.pump_status = 0; // Dang khoa loi bao ve
+//														}
+//												} else if (shared_adc_data.soil_percent > g_soil_off_threshold) {
+//														g_system_control.pump_status = 0; // Du am -> Tat bom
+//														/* Dat uot lai: mo khoa DRY_RUN/OVERLOAD (WATER_EMPTY clear khi co nuoc lai) */
+//														if (g_pump_diagnostic == PUMP_DIAG_DRY_RUN
+//																|| g_pump_diagnostic == PUMP_DIAG_OVERLOAD) {
+//																g_pump_diagnostic = PUMP_DIAG_OK;
+//														}
+//												}
+//												clamp_pump_for_water(&g_system_control.pump_status, shared_adc_data.water_percent);
+
+//												// C?p nh?t LCD cho bom n?u tr?ng th?i bom thay d?i
+//												if (old_pump != g_system_control.pump_status) {
+//														g_lcd_update = 1;
+//												}
+
+//												// 2. Tu dong dieu khien MAI CHE dua vao cam bien mua & cong tac hanh trinh (?NH ?EN CHU?N)
+//												if (Rain_Read() == 0) { // ?ang MUA -> Mu?n ??NG m?i
+//														// Ch? ra l?nh ??NG n?u hi?n t?i m?i chua ? tr?ng th?i ??NG 
+//														// V? c?ng t?c h?nh tr?nh ??NG (PB8) chua b? ch?m (m?c 1 l? chua ch?m)
+//														if (g_system_control.roof_status != MOTOR_BACKWARD && GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_8) == Bit_SET) {
+//																g_system_control.roof_status = MOTOR_BACKWARD;
+//																g_lcd_update = 1; // D?ng c? v? LCD 1 l?n duy nh?t khi b?t d?u ch?y
+//														}
+//												} else { // Tr?nh kh?ng mua -> Mu?n M? m?i
+//														// ?? FIX: N?u m?i dang ??NG (MOTOR_BACKWARD), ph?i D?NG tru?c (STOP)
+//														if (g_system_control.roof_status == MOTOR_BACKWARD) {
+//																// Chuy?n sang STOP d? motor d?ng quay ngu?c
+//																g_system_control.roof_status = 0; // STOP
+//																g_lcd_update = 1;
+//														} 
+//														// Sau khi d? STOP, b?y gi? m?i chuy?n MOTOR_FORWARD
+//														else if (g_system_control.roof_status != MOTOR_FORWARD && 
+//																		 GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_7) == Bit_SET) {
+//																g_system_control.roof_status = MOTOR_FORWARD;
+//																g_lcd_update = 1;
+//														}
+//												}
+//										}
+
+//										// ------------------------------------------------------------------
+//										// C. CHAN DOAN LOI BOM — uu tien: 3 can bon > 2 overload > 1 dry-run
+//										// Can bon: check ngay. DRY_RUN/OVERLOAD: sau grace ~2s khi vua bat bom
+//										// ------------------------------------------------------------------
+//										if (shared_adc_data.water_percent < WATER_EMPTY_PERCENT) {
+//												if (g_system_control.pump_status != 0) {
+//														g_system_control.pump_status = 0;
+//														g_lcd_update = 1;
+//												}
+//												g_pump_diagnostic = PUMP_DIAG_WATER_EMPTY;
+//										} else if (g_system_control.pump_status == 1) {
+
+//												if (!s_prev_pump_on) {
+//														s_pump_on_since_ms = millis();
+//												}
+
+//												if ((millis() - s_pump_on_since_ms) < PUMP_PROTECT_GRACE_MS) {
+//														/* Grace: cho flow/dong on dinh — chua bat DRY_RUN/OVERLOAD */
+//												}
+//												// Truong hop A: Dong dien vuot nguong an toan (> 2A) -> Bom ket / Qua tai
+//												else if (current_now_mA > 2000) {
+//														g_pump_diagnostic = PUMP_DIAG_OVERLOAD;
+//														g_system_control.pump_status = 0;
+//														g_lcd_update = 1;
+//												}
+//												// Truong hop B: Dong cuc thap hoac khong co nuoc chay qua -> Chay kho
+//												else if (current_now_mA < 100 || flow_now_x10 < 2u) {
+//														g_pump_diagnostic = PUMP_DIAG_DRY_RUN;
+//														g_system_control.pump_status = 0;
+//														g_lcd_update = 1;
+//												}
+//												// Truong hop C: Moi thu on dinh
+//												else {
+//														g_pump_diagnostic = PUMP_DIAG_OK;
+//												}
+
+//										} else {
+//												/* Bom tat + nuoc du: xoa WATER_EMPTY; giu latch DRY_RUN/OVERLOAD */
+//												if (g_pump_diagnostic == PUMP_DIAG_WATER_EMPTY) {
+//														g_pump_diagnostic = PUMP_DIAG_OK;
+//												} else if (g_pump_diagnostic != PUMP_DIAG_DRY_RUN
+//																&& g_pump_diagnostic != PUMP_DIAG_OVERLOAD) {
+//														g_pump_diagnostic = PUMP_DIAG_OK;
+//												}
+//										}
+//										s_prev_pump_on = (g_system_control.pump_status == 1) ? 1u : 0u;
+//										// G?i ACK mang TR?NG TH?I TH?T (sau khi AUTO + an to?n d? x? l? xong)
+//										if (g_ack_pending) {
+//												g_ack_pending = 0;
+//												lora_control_payload_t ack_state;
+//												ack_state.system_mode = g_system_control.system_mode;
+//												ack_state.pump_status = g_system_control.pump_status;
+//												ack_state.roof_status = g_system_control.roof_status;
+//												ack_state.pump_pwm    = current_pump_pwm;
+//												ack_state.roof_pwm    = current_roof_pwm;
+//                                                #if CONTROL_TEST_DEBUG
+//                                                debug_print_control_ack(&ack_state);
+//                                                #endif
+//												lora_node_send_ack(&node, &ack_state);
+//										}
+
+//										// ------------------------------------------------------------------
+//										// D. XUAT DAU RA PHAN CUNG THAT THEO BIEN TRUNG TAM
+//										// ------------------------------------------------------------------
+//                    clamp_pump_for_water(&g_system_control.pump_status, shared_adc_data.water_percent);
+//                    Motor_Roof_Safety_Supervisor((uint8_t *)&g_system_control.roof_status, &g_lcd_update);
+//										/* ---------------- A. DIEU KHIEN MAY BOM ---------------- */
+
+//										if (g_system_control.pump_status == 1) {
+//											  Pump_SetSpeed(current_pump_pwm);
+//										} else {
+//												Pump_Off();
+//										}
+
+//										/* ---------------- B. DIEU KHIEN MAI CHE ---------------- */
+
+//										Motor1_Dir(g_system_control.roof_status);
+
+//										if (g_system_control.roof_status == MOTOR_FORWARD) {
+//												Motor1_SetSpeed(current_roof_pwm);
+//												//debug_log("-> Phan cung: MO MAI CHE - PWM: %u%%\r\n", current_roof_pwm);
+
+//										} else if (g_system_control.roof_status == MOTOR_BACKWARD) {
+//												Motor1_SetSpeed(current_roof_pwm);
+//												//debug_log("-> Phan cung: DONG MAI CHE - PWM: %u%%\r\n", current_roof_pwm);
+
+//										} else {
+//												Motor1_SetSpeed(0);
+//												//debug_log("-> Phan cung: DUNG MAI CHE\r\n");
+//										}
+
+//										/* ------------- C. DONG BO CHE DO HE THONG ------------- */
+
+//										if (g_system_control.system_mode == 1) {
+//												//debug_log("-> He thong dang o che do: TU DONG (Auto)\r\n");
+//										} else {
+//												//debug_log("-> He thong dang o che do: THU CONG (Manual)\r\n");
+//										}
+
+//										// ------------------------------------------------------------------
+//										// E. THEM: CAP NHAT GIAO DIEN MAN HINH LCD KHI CO THAY DOI
+//										// ------------------------------------------------------------------
+
+//										if (g_lcd_update) {
+//												Menu_Display_Update(&g_system_control);
+//												g_lcd_update = 0; // Xoa co sau khi cap nhat man hinh xong
+//										}
+
+//										// 3. Giu nhip dap heartbeat giam sat tai cho
+//										debug_heartbeat();
+
+//										// Chong loop quay qua nhanh gay doi phim khi quet nut
+//										Delay_Ms(20);
 //        }
-
-//        // Ð?c DHT11 (Ch?m, Chu k? ~2 giây = 100 vòng l?p x 20ms)
-//        dht11_timer_count++;
-//        if (dht11_timer_count >= 100) {
-//            uint8_t temp = 0, humi = 0;
-//            if (DHT11_ReadData(&temp, &humi) == DHT11_OK) {
-//                g_sensor_cache.temperature_c10 = (int16_t)temp * 10;
-//                g_sensor_cache.humidity_pct10 = (uint16_t)humi * 10;
-//            }
-//            dht11_timer_count = 0;
-//        }
-
-//        /* ================================================================== */
-//        /* 2. KI?M TRA L?NH T? M?NG LORA & NÚT NH?N T?I VU?N                  */
-//        /* ================================================================== */
-//        
-//        // L?ng nghe sóng LoRa
-//        lora_node_poll(&node);
-//        
-//        // Quét nút b?m t?i ch?
-//        Menu_Button_Scan(&g_system_control, &g_lcd_update);
-
-//        // Kiem tra l?nh Web do xu?ng
-//        if (g_control_updated) {
-//            g_control_updated = 0; 
-//            debug_log("[Hardware] Thuc thi lenh dieu khien tu Web...\r\n");
-//            
-//            g_system_control.system_mode = g_remote_control.system_mode;
-//            g_system_control.pump_status = g_remote_control.pump_status;
-//            g_system_control.roof_status = g_remote_control.roof_status;
-//            current_roof_pwm = g_remote_control.roof_pwm;
-//            g_lcd_update = 1; 
-
-//            LED_Blink();
-//        }
-
-//        /* ================================================================== */
-//        /* 3. LOGIC T? Ð?NG & B?O V? BOM (Dùng d? li?u t? Cache)              */
-//        /* ================================================================== */
-//        
-//        if (g_system_control.system_mode == 1) { // Ch? d? AUTO
-//            uint8_t old_pump = g_system_control.pump_status;
-//            uint8_t old_roof = g_system_control.roof_status;
-
-//            if (g_sensor_cache.soil_moisture < 30) {
-//                g_system_control.pump_status = 1; 
-//            } else if (g_sensor_cache.soil_moisture > 80) {
-//                g_system_control.pump_status = 0; 
-//            }
-
-//            if (g_sensor_cache.rain_status == 0) {
-//                g_system_control.roof_status = MOTOR_BACKWARD; 
-//            } else {
-//                g_system_control.roof_status = MOTOR_FORWARD; 
-//            }
-
-//            if(old_pump != g_system_control.pump_status || old_roof != g_system_control.roof_status) {
-//                g_lcd_update = 1;
-//            }
-//        }
-
-//        // Ch?n doán l?i b?o v? bom
-//        if (g_system_control.pump_status == 1) {
-//            if (g_sensor_cache.current_mA > 2000) {
-//                g_pump_diagnostic = 2; // Overload
-//                g_system_control.pump_status = 0; 
-//                g_lcd_update = 1;
-//                debug_log("[ALERT] Overload detected! Hard shutdown pump.\r\n");
-//            }
-//            // Ði?u ki?n luu lu?ng < 0.2 L/min quy d?i ra x10 là < 2
-//            else if (g_sensor_cache.current_mA < 100 || g_sensor_cache.flow_rate_Lmin_x10 < 2) {
-//                g_pump_diagnostic = 1; // Dry-run
-//                g_system_control.pump_status = 0; 
-//                g_lcd_update = 1;
-//                debug_log("[ALERT] Dry-run detected! Hard shutdown pump.\r\n");
-//            }
-//            else {
-//                g_pump_diagnostic = 0; 
-//            }
-//        } else {
-//            if (g_pump_diagnostic != 1 && g_pump_diagnostic != 2) {
-//                g_pump_diagnostic = 0;
-//            }
-//        }
-
-//        /* ================================================================== */
-//        /* 4. XU?T TÍN HI?U RA PH?N C?NG TH?T & C?P NH?T MÀN HÌNH             */
-//        /* ================================================================== */
-
-//        // A. Ði?u khi?n bom
-//        if (g_system_control.pump_status == 1) {
-//            Pump_On();
-//        } else {
-//            Pump_Off();
-//        }
-
-//        // B. Ði?u khi?n mái che
-//        Motor1_Dir(g_system_control.roof_status);
-//        if (g_system_control.roof_status == MOTOR_FORWARD || g_system_control.roof_status == MOTOR_BACKWARD) {
-//            Motor1_SetSpeed(current_roof_pwm);
-//        } else {
-//            Motor1_SetSpeed(0);
-//        }
-
-//        // C. C?p nh?t giao di?n màn hình LCD
-//        if (g_lcd_update) {
-//            Menu_Display_Update(&g_system_control);
-//            g_lcd_update = 0;
-//        }
-
-//        // Nh?p d?p h? th?ng và ch?ng d?i (Debounce)
-//        debug_heartbeat();
-//        Delay_Ms(20);
 //    }
 //}
+/////////////////////////////////main-da chinh/////////////////////////////
 
+/* Bi?n to?n c?c luu tr?ng th?i n?t nh?n nh?n t? LoRa Gateway */
+volatile lora_control_payload_t g_remote_control;
+volatile uint8_t g_control_updated = 0; // C? b?o hi?u c? l?nh m?i
+extern volatile uint8_t g_ack_pending;
+
+/* ========================================================================== */
+/* ?? TH?M: BI?N TO?N C?C QU?N L? TR?NG TH?I TH?C T? T?I VU?N                 */
+/* ========================================================================== */
+menu_control_data_t g_system_control = {
+    /* Boot MANUAL: tranh Auto bat bom khi ADC dat noi -> PWM nhi?u -> mat LoRa luc demo */
+    .system_mode = 0, // 0 = MANUAL, 1 = AUTO
+    .pump_status = 0, // 0 = OFF, 1 = ON
+    .roof_status = 0  // 0 = STOP, MOTOR_FORWARD = OPEN, MOTOR_BACKWARD = CLOSE
+};
+uint8_t g_lcd_update = 1; // C? b?o hi?u c?n v? l?i m?n h?nh LCD
+uint8_t current_roof_pwm = 100; // Luu t?c d? m?i che nh?n t? Web
+/* Bi?n qu?n l? ch?n do?n l?i tr?m bom th?c t? */
+uint8_t current_pump_pwm = 100;
+volatile pump_diagnostic_t g_pump_diagnostic = PUMP_DIAG_OK;
+
+/* TEST ONLY: dat 1 = tat bao ve bom (overload/dry-run/can bon). Xong test doi lai 0! */
+#define PUMP_PROTECT_DISABLE  1
+
+/* Sau khi bat bom: cho nuoc/dong on dinh roi moi check DRY_RUN/OVERLOAD */
+#define PUMP_PROTECT_GRACE_MS  2000u
+static uint8_t s_prev_pump_on = 0;
+static uint32_t s_pump_on_since_ms = 0;
+
+/* === Bi?n t?m d? truy?n ADC data d?n h?m callback LoRa === */
+static Analog_Data_t g_current_adc_data = {0};
+
+#define WATER_EMPTY_PERCENT  10
+uint8_t g_soil_on_threshold = 30;
+uint8_t g_soil_off_threshold = 80;
+static uint8_t g_runtime_node_id = 0;
+
+static uint8_t read_dip_node_id(void)
+{
+    GPIO_InitTypeDef gpio;
+    uint8_t b0, b1, b2, dip;
+
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB | RCC_APB2Periph_AFIO, ENABLE);
+    GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);
+
+    gpio.GPIO_Mode = GPIO_Mode_IPD;
+    gpio.GPIO_Speed = GPIO_Speed_2MHz;
+    gpio.GPIO_Pin = GPIO_Pin_9 | GPIO_Pin_6 | GPIO_Pin_3;
+    GPIO_Init(GPIOB, &gpio);
+
+    b0 = GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_9) == Bit_SET ? 1 : 0;
+    b1 = GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_6) == Bit_SET ? 1 : 0;
+    b2 = GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_3) == Bit_SET ? 1 : 0;
+    dip = (uint8_t)(b0 | (b1 << 1) | (b2 << 2));
+
+    if (dip == 0) {
+        return (uint8_t)MY_NODE_ID;
+    }
+    return (uint8_t)(0x10 | dip);
+}
+
+static void clamp_pump_for_water(uint8_t *pump_status, uint8_t water_percent)
+{
+#if PUMP_PROTECT_DISABLE
+    (void)pump_status;
+    (void)water_percent;
+    return;
+#endif
+    if (*pump_status != 0 && water_percent < WATER_EMPTY_PERCENT) {
+        *pump_status = 0;
+    }
+}
+
+
+
+/* ===== UART debug ===== */
+static void UART1_Init(uint32_t baudrate)
+{
+    GPIO_InitTypeDef gpio;
+    USART_InitTypeDef uart;
+
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1 | RCC_APB2Periph_GPIOA, ENABLE);
+
+    // TX PA9
+    gpio.GPIO_Pin = GPIO_Pin_9;
+    gpio.GPIO_Mode = GPIO_Mode_AF_PP;
+    gpio.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init(GPIOA, &gpio);
+
+    // RX PA10
+    gpio.GPIO_Pin = GPIO_Pin_10;
+    gpio.GPIO_Mode = GPIO_Mode_IN_FLOATING;
+    GPIO_Init(GPIOA, &gpio);
+
+    uart.USART_BaudRate = baudrate;
+    uart.USART_WordLength = USART_WordLength_8b;
+    uart.USART_StopBits = USART_StopBits_1;
+    uart.USART_Parity = USART_Parity_No;
+    uart.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+    uart.USART_Mode = USART_Mode_Tx | USART_Mode_Rx;
+    USART_Init(USART1, &uart);
+    USART_Cmd(USART1, ENABLE);
+}
+
+static void UART_SendChar(char c)
+{
+    while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);
+    USART_SendData(USART1, c);
+}
+
+static void UART_SendString(const char *s)
+{
+    while (s && *s)
+        UART_SendChar(*s++);
+}
+
+static void debug_log(const char *fmt, ...)
+{
+    char buf[128];
+    va_list ap;
+
+    va_start(ap, fmt);
+    vsnprintf(buf, sizeof(buf), fmt, ap);
+    va_end(ap);
+    UART_SendString(buf);
+}
+#if CONTROL_TEST_DEBUG
+static void debug_print_control_rx(const lora_control_payload_t *cmd)
+{
+    const char *roof_str = (cmd->roof_status == 1) ? "OPEN" :
+                           (cmd->roof_status == 2) ? "CLOSE" : "STOP";
+    debug_log("\r\n========== [CTRL-RX] LENH TU WEB ==========\r\n");
+    debug_log("  mode      : %s\r\n", cmd->system_mode ? "AUTO" : "MANUAL");
+    debug_log("  pump      : %s\r\n", cmd->pump_status ? "BAT" : "TAT");
+    debug_log("  pump_pwm  : %u%%\r\n", (unsigned)cmd->pump_pwm);
+    debug_log("  roof      : %s\r\n", roof_str);
+    debug_log("  roof_pwm  : %u%%\r\n", (unsigned)cmd->roof_pwm);
+    debug_log("============================================\r\n");
+}
+
+static void debug_print_control_ack(const lora_control_payload_t *ack)
+{
+    const char *roof_str = (ack->roof_status == 1) ? "OPEN" :
+                           (ack->roof_status == 2) ? "CLOSE" : "STOP";
+    debug_log("\r\n========== [ACK-TX] GUI LEN ESP ==========\r\n");
+    debug_log("  mode      : %s\r\n", ack->system_mode ? "AUTO" : "MANUAL");
+    debug_log("  pump      : %s\r\n", ack->pump_status ? "BAT" : "TAT");
+    debug_log("  pump_pwm  : %u%%\r\n", (unsigned)ack->pump_pwm);
+    debug_log("  roof      : %s\r\n", roof_str);
+    debug_log("  roof_pwm  : %u%%\r\n", (unsigned)ack->roof_pwm);
+    debug_log("============================================\r\n");
+}
+#endif
+/** Heartbeat every ~5 s on TIM4 (free-running; TIM2 reserved for delay.c). */
+static void debug_heartbeat(void)
+{
+    static uint32_t acc_us;
+    static uint16_t last_tick;
+    static uint8_t primed;
+    uint16_t now;
+    uint32_t delta;
+
+    now = (uint16_t)TIM_GetCounter(TIM4);
+
+    if (!primed) {
+        last_tick = now;
+        primed = 1;
+        return;
+    }
+
+    if (now >= last_tick)
+        delta = (uint32_t)(now - last_tick);
+    else
+        delta = (uint32_t)(0x10000u - last_tick + now);
+
+    last_tick = now;
+    acc_us += delta;
+
+    if (acc_us >= 5000000UL) {
+        acc_us -= 5000000UL;
+        debug_log("[HB] 0x%02X\r\n",
+                  (unsigned)g_runtime_node_id);
+    }
+}
+
+static void LED_Init(void)
+{
+    GPIO_InitTypeDef gpioInit;
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
+    gpioInit.GPIO_Mode = GPIO_Mode_Out_PP;
+    gpioInit.GPIO_Pin = GPIO_Pin_13;
+    gpioInit.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init(GPIOC, &gpioInit);
+    GPIO_SetBits(GPIOC, GPIO_Pin_13);
+}
+void LED_Blink(void) {
+    if (GPIO_ReadOutputDataBit(GPIOC, GPIO_Pin_13) == SET) {
+        GPIO_ResetBits(GPIOC, GPIO_Pin_13);
+    } else {
+        GPIO_SetBits(GPIOC, GPIO_Pin_13);
+    }
+}
+
+/**
+ * Read sensors and fill lora_sensor_payload_t for CMD_SENSOR_DATA reply.
+ * ?? FIX: S? d?ng ADC data d? d?c s?n t? g_current_adc_data
+ */
+static uint8_t my_read_sensor(uint8_t *payload, uint8_t max_len)
+{
+    lora_sensor_payload_t sample;
+    uint8_t temp = 0;
+    uint8_t humi = 0;
+
+    if (max_len < sizeof(sample)) {
+        debug_log("[S] buf small %u\r\n",
+          (unsigned)max_len);
+        return 0;
+    }
+
+    memset(&sample, 0, sizeof(sample));
+    
+    // 1. ??c DHT11
+    if (DHT11_ReadData(&temp, &humi) == DHT11_OK) {
+        sample.temperature_c10 = (int16_t)temp * 10;
+        sample.humidity_pct10 = (uint16_t)humi * 10;
+    }
+
+    // 2. ?? D?NG D? LI?U ADC ?? ??C S?N (kh?ng d?c l?i)
+    sample.soil_moisture = (uint16_t)g_current_adc_data.soil_percent;
+    sample.water_level   = (uint16_t)g_current_adc_data.water_percent;
+    sample.current_mA    = (uint16_t)(g_current_adc_data.current_ampe * 1000.0f);
+    
+    // 3. ??c c?m bi?n mua (Digital)
+    sample.rain_status = Rain_Read();
+
+    // 4. Doc flow (TIM3_CH1 IC, chung TIM3 voi PWM mai) — cache ~500ms
+    uint16_t flow_x10 = Flow_GetLpmX10();
+    sample.flow_rate_Lmin_x10 = (uint8_t)((flow_x10 > 255u) ? 255u : flow_x10);
+
+    // 5. ??ng b? tr?ng th?i th?c t? t?i vu?n l?n Web
+    sample.system_mode = g_system_control.system_mode;
+    sample.pump_status = g_system_control.pump_status;
+    sample.roof_status = g_system_control.roof_status;
+    sample.pump_diagnostic = (uint8_t)g_pump_diagnostic;
+
+    // Debug log (không dùng %.1f — tránh kéo lib printf float vu?t 32KB Keil Lite)
+    debug_log("[S] T=%d H=%u S=%u W=%u I=%u R=%s F=%u.%u\r\n",
+              (int)sample.temperature_c10/10,
+              (unsigned)sample.humidity_pct10/10,
+              (unsigned)sample.soil_moisture,
+              (unsigned)sample.water_level,
+              (unsigned)sample.current_mA,
+              (sample.rain_status == 0) ? "Y" : "N",
+              (unsigned)(sample.flow_rate_Lmin_x10 / 10),
+              (unsigned)(sample.flow_rate_Lmin_x10 % 10));
+
+    memcpy(payload, &sample, sizeof(sample));
+    return (uint8_t)sizeof(sample);
+}
+
+/**
+ * Wrapper function: G?i my_read_sensor (kh?ng c?n tham s? ADC v? d?ng global)
+ */
+static uint8_t my_read_sensor_wrapper(uint8_t *payload, uint8_t max_len) {
+    return my_read_sensor(payload, max_len);  // ? Ch? 2 tham s?
+}
+// ===== MAIN =====
+int main(void) {
+    LED_Init();
+
+    UART1_Init(115200);
+    UART_SendString("\r\n===== STM32 LoRa Slave Node (Updated) =====\r\n");
+    debug_log("[Boot] UART1 115200 OK\r\n");
+
+    debug_log("[Boot] TIM2 (delay) init...\r\n");
+    TIM2_Init();
+    debug_log("[Boot] TIM4 (heartbeat) init...\r\n");
+    TIM4_HeartbeatInit();
+    debug_log("[Boot] timers OK\r\n");
+
+    debug_log("[Boot] DHT\r\n");
+    DHT11_Init();
+    debug_log("[Boot] DHT OK\r\n");
+
+    // --- ??I KH?C N?Y TH?NH FILE G?P ANALOG M?I ---
+    debug_log("[Boot] Analog\r\n");
+    Analog_Init(); 
+    debug_log("[Boot] ACS712 calib\r\n");
+    Analog_Calibrate();
+    debug_log("[Boot] Analog OK\r\n");
+#if PUMP_PROTECT_DISABLE
+    debug_log("[Boot] PUMP PROT OFF\r\n");
+#endif
+
+    debug_log("[Boot] Rain\r\n");
+    Rain_Init();
+    
+    debug_log("[Boot] Flow+Motor\r\n");
+    Motor_Init();
+    FlowSensor_Init();
+    
+    debug_log("[Boot] Menu/LCD\r\n");
+    Menu_Init(); 
+
+    Delay_Ms(100);
+
+    {
+        uint8_t payload[LORA_MAX_PAYLOAD];
+        debug_log("[Boot] Snap\r\n");
+        my_read_sensor(payload, sizeof(payload));
+    }
+
+    g_runtime_node_id = read_dip_node_id();
+    debug_log("[Boot] Node 0x%02X\r\n", (unsigned)g_runtime_node_id);
+
+    debug_log("[Boot] LoRa\r\n");
+    if (!lora_radio_begin()) {
+        UART_SendString("[Boot] ERR radio\r\n");
+        while (1) { }
+    }
+
+    debug_log("[Boot] OK n=0x%02X gw=0x%02X\r\n",
+              (unsigned)g_runtime_node_id, (unsigned)GATEWAY_ID);
+    debug_log("[Boot] loop\r\n");
+
+    {
+        const lora_node_config_t cfg = {
+            .node_id = g_runtime_node_id,
+            .gateway_id = GATEWAY_ID,
+            .log = debug_log,
+        };
+
+        const lora_node_radio_t radio = {
+            .send = lora_radio_send,
+            .rx_pending = lora_radio_rx_pending,
+            .receive = lora_radio_receive,
+            .read_sensor = my_read_sensor_wrapper,
+        };
+
+        lora_node_t node;
+        lora_node_init(&node, &cfg, &radio);
+
+        while(1){
+										// ==================================================================
+										// LAY MAU CAM BIEN TAP TRUNG (CHI DOC 1 LAN DUY NHAT CHO TOAN BO VONG LAP)
+										// ==================================================================
+										Analog_Data_t shared_adc_data;
+										Analog_UpdateAll(&shared_adc_data); // Doc tat ca kenh ADC (Do am, Muc nuoc, Dong dien)
+					          g_current_adc_data = shared_adc_data;
+										
+										// Tinh toan nhanh dong dien (mA) va luu luong tu du lieu vua doc
+										uint16_t current_now_mA = (uint16_t)(shared_adc_data.current_ampe * 1000.0f);
+										/* Flow TIM3_CH1 (chung PWM mai CH4) — cache L/min*10 */
+										uint16_t flow_now_x10 = Flow_GetLpmX10();
+
+										// ------------------------------------------------------------------
+										// A. THEM: LUON QUET NUT BAM VAT LY NGOAI VUON DE CAP NHAT TRANG THAI
+										// ------------------------------------------------------------------
+										Menu_Button_Scan(&g_system_control, &g_lcd_update);
+
+										// 1. Luon luon quet song LoRa de nhan du lieu
+										lora_node_poll(&node);
+										
+										// 2. Kiem tra xem co lenh nut nhan moi tu Web do xuong khong
+										if (g_control_updated) {
+												g_control_updated = 0; // Xoa co ngay lap tuc de tranh xu ly lap
+												
+												//debug_log("[Hardware] Thuc thi lenh dieu khien tu Web...\r\n");
+												
+												/* ================================================================== */
+												/* DONG BO LENH WEB VAO BO DIEU KHIEN TRUNG TAM                        */
+												/* ================================================================== */
+												g_system_control.system_mode = g_remote_control.system_mode;
+												g_system_control.pump_status = g_remote_control.pump_status;
+												clamp_pump_for_water(&g_system_control.pump_status, shared_adc_data.water_percent);
+												g_system_control.roof_status = g_remote_control.roof_status;
+												current_roof_pwm = g_remote_control.roof_pwm; // Nhan them PWM tu Web
+											    current_pump_pwm = g_remote_control.pump_pwm;
+                                                #if CONTROL_TEST_DEBUG
+                                                    debug_print_control_rx((const lora_control_payload_t*)&g_remote_control);
+                                                #endif
+												g_lcd_update = 1; // Danh dau bat buoc update lai LCD
+
+												// Nhap nhay den LED PC13 de bao hieu xu ly lenh thanh cong
+												LED_Blink();
+										}
+
+										// ------------------------------------------------------------------
+										// B. THEM: LOGIC TU DONG (Su dung truc tiep du lieu tap trung o dau loop)
+										// ------------------------------------------------------------------
+										if (g_system_control.system_mode == 1) {
+												uint8_t old_pump = g_system_control.pump_status;
+												
+												// 1. Tu dong dieu khien BOM dua theo do am dat
+												// Sau loi bao ve: KHONG bat lai bom moi vong (tranh PWM nhay -> mat LoRa)
+												if (shared_adc_data.soil_percent < g_soil_on_threshold) {
+#if !PUMP_PROTECT_DISABLE
+														if (g_pump_diagnostic != PUMP_DIAG_DRY_RUN
+																&& g_pump_diagnostic != PUMP_DIAG_OVERLOAD
+																&& g_pump_diagnostic != PUMP_DIAG_WATER_EMPTY) {
+																g_system_control.pump_status = 1; // Dat kho -> Bat bom
+														} else {
+																g_system_control.pump_status = 0; // Dang khoa loi bao ve
+														}
+#else
+														g_system_control.pump_status = 1;
+#endif
+												} else if (shared_adc_data.soil_percent > g_soil_off_threshold) {
+														g_system_control.pump_status = 0; // Du am -> Tat bom
+														/* Dat uot lai: mo khoa DRY_RUN/OVERLOAD (WATER_EMPTY clear khi co nuoc lai) */
+														if (g_pump_diagnostic == PUMP_DIAG_DRY_RUN
+																|| g_pump_diagnostic == PUMP_DIAG_OVERLOAD) {
+																g_pump_diagnostic = PUMP_DIAG_OK;
+														}
+												}
+												clamp_pump_for_water(&g_system_control.pump_status, shared_adc_data.water_percent);
+
+												// C?p nh?t LCD cho bom n?u tr?ng th?i bom thay d?i
+												if (old_pump != g_system_control.pump_status) {
+														g_lcd_update = 1;
+												}
+
+												// 2. Tu dong dieu khien MAI CHE dua vao cam bien mua & cong tac hanh trinh (?NH ?EN CHU?N)
+												if (Rain_Read() == 0) { // ?ang MUA -> Mu?n ??NG m?i
+														// Ch? ra l?nh ??NG n?u hi?n t?i m?i chua ? tr?ng th?i ??NG 
+														// V? c?ng t?c h?nh tr?nh ??NG (PB8) chua b? ch?m (m?c 1 l? chua ch?m)
+														if (g_system_control.roof_status != MOTOR_BACKWARD && GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_8) == Bit_SET) {
+																g_system_control.roof_status = MOTOR_BACKWARD;
+																g_lcd_update = 1; // D?ng c? v? LCD 1 l?n duy nh?t khi b?t d?u ch?y
+														}
+												} else { // Tr?nh kh?ng mua -> Mu?n M? m?i
+														// ?? FIX: N?u m?i dang ??NG (MOTOR_BACKWARD), ph?i D?NG tru?c (STOP)
+														if (g_system_control.roof_status == MOTOR_BACKWARD) {
+																// Chuy?n sang STOP d? motor d?ng quay ngu?c
+																g_system_control.roof_status = 0; // STOP
+																g_lcd_update = 1;
+														} 
+														// Sau khi d? STOP, b?y gi? m?i chuy?n MOTOR_FORWARD
+														else if (g_system_control.roof_status != MOTOR_FORWARD && 
+																		 GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_7) == Bit_SET) {
+																g_system_control.roof_status = MOTOR_FORWARD;
+																g_lcd_update = 1;
+														}
+												}
+										}
+
+										// ------------------------------------------------------------------
+										// C. CHAN DOAN LOI BOM — uu tien: 3 can bon > 2 overload > 1 dry-run
+										// Can bon: check ngay. DRY_RUN/OVERLOAD: sau grace ~2s khi vua bat bom
+										// ------------------------------------------------------------------
+#if !PUMP_PROTECT_DISABLE
+										if (shared_adc_data.water_percent < WATER_EMPTY_PERCENT) {
+												if (g_system_control.pump_status != 0) {
+														g_system_control.pump_status = 0;
+														g_lcd_update = 1;
+												}
+												g_pump_diagnostic = PUMP_DIAG_WATER_EMPTY;
+										} else if (g_system_control.pump_status == 1) {
+
+												if (!s_prev_pump_on) {
+														s_pump_on_since_ms = millis();
+												}
+
+												if ((millis() - s_pump_on_since_ms) < PUMP_PROTECT_GRACE_MS) {
+														/* Grace: cho flow/dong on dinh — chua bat DRY_RUN/OVERLOAD */
+												}
+												// Truong hop A: Dong dien vuot nguong an toan (> 2A) -> Bom ket / Qua tai
+												else if (current_now_mA > 2000) {
+														g_pump_diagnostic = PUMP_DIAG_OVERLOAD;
+														g_system_control.pump_status = 0;
+														g_lcd_update = 1;
+												}
+												// Truong hop B: Dong cuc thap hoac khong co nuoc chay qua -> Chay kho
+												else if (current_now_mA < 100 || flow_now_x10 < 2u) {
+														g_pump_diagnostic = PUMP_DIAG_DRY_RUN;
+														g_system_control.pump_status = 0;
+														g_lcd_update = 1;
+												}
+												// Truong hop C: Moi thu on dinh
+												else {
+														g_pump_diagnostic = PUMP_DIAG_OK;
+												}
+
+										} else {
+												/* Bom tat + nuoc du: xoa WATER_EMPTY; giu latch DRY_RUN/OVERLOAD */
+												if (g_pump_diagnostic == PUMP_DIAG_WATER_EMPTY) {
+														g_pump_diagnostic = PUMP_DIAG_OK;
+												} else if (g_pump_diagnostic != PUMP_DIAG_DRY_RUN
+																&& g_pump_diagnostic != PUMP_DIAG_OVERLOAD) {
+														g_pump_diagnostic = PUMP_DIAG_OK;
+												}
+										}
+										s_prev_pump_on = (g_system_control.pump_status == 1) ? 1u : 0u;
+#else
+										g_pump_diagnostic = PUMP_DIAG_OK;
+										s_prev_pump_on = (g_system_control.pump_status == 1) ? 1u : 0u;
+#endif
+										// G?i ACK mang TR?NG TH?I TH?T (sau khi AUTO + an to?n d? x? l? xong)
+										if (g_ack_pending) {
+												g_ack_pending = 0;
+												lora_control_payload_t ack_state;
+												ack_state.system_mode = g_system_control.system_mode;
+												ack_state.pump_status = g_system_control.pump_status;
+												ack_state.roof_status = g_system_control.roof_status;
+												ack_state.pump_pwm    = current_pump_pwm;
+												ack_state.roof_pwm    = current_roof_pwm;
+                                                #if CONTROL_TEST_DEBUG
+                                                debug_print_control_ack(&ack_state);
+                                                #endif
+												lora_node_send_ack(&node, &ack_state);
+										}
+
+										// ------------------------------------------------------------------
+										// D. XUAT DAU RA PHAN CUNG THAT THEO BIEN TRUNG TAM
+										// ------------------------------------------------------------------
+                    clamp_pump_for_water(&g_system_control.pump_status, shared_adc_data.water_percent);
+                    Motor_Roof_Safety_Supervisor((uint8_t *)&g_system_control.roof_status, &g_lcd_update);
+										/* ---------------- A. DIEU KHIEN MAY BOM ---------------- */
+
+										if (g_system_control.pump_status == 1) {
+											  Pump_SetSpeed(current_pump_pwm);
+										} else {
+												Pump_Off();
+										}
+
+										/* ---------------- B. DIEU KHIEN MAI CHE ---------------- */
+
+										Motor1_Dir(g_system_control.roof_status);
+
+										if (g_system_control.roof_status == MOTOR_FORWARD) {
+												Motor1_SetSpeed(current_roof_pwm);
+												//debug_log("-> Phan cung: MO MAI CHE - PWM: %u%%\r\n", current_roof_pwm);
+
+										} else if (g_system_control.roof_status == MOTOR_BACKWARD) {
+												Motor1_SetSpeed(current_roof_pwm);
+												//debug_log("-> Phan cung: DONG MAI CHE - PWM: %u%%\r\n", current_roof_pwm);
+
+										} else {
+												Motor1_SetSpeed(0);
+												//debug_log("-> Phan cung: DUNG MAI CHE\r\n");
+										}
+
+										/* ------------- C. DONG BO CHE DO HE THONG ------------- */
+
+										if (g_system_control.system_mode == 1) {
+												//debug_log("-> He thong dang o che do: TU DONG (Auto)\r\n");
+										} else {
+												//debug_log("-> He thong dang o che do: THU CONG (Manual)\r\n");
+										}
+
+										// ------------------------------------------------------------------
+										// E. THEM: CAP NHAT GIAO DIEN MAN HINH LCD KHI CO THAY DOI
+										// ------------------------------------------------------------------
+
+										if (g_lcd_update) {
+												Menu_Display_Update(&g_system_control);
+												g_lcd_update = 0; // Xoa co sau khi cap nhat man hinh xong
+										}
+
+										// 3. Giu nhip dap heartbeat giam sat tai cho
+										debug_heartbeat();
+
+										// Chong loop quay qua nhanh gay doi phim khi quet nut
+										Delay_Ms(20);
+        }
+    }
+}
+
+//////////////////////////////////////////////fake data sensor////////////////////////////////////////////////////////
 
 

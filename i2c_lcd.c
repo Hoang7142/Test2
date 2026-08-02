@@ -1,6 +1,7 @@
 
 #include "i2c_lcd.h"
 #include "delay.h"
+#include <stdbool.h>
 
 #define LCD_EN 2
 #define LCD_RW 1
@@ -44,20 +45,36 @@ static void I2C2_Init(void) {
     I2C_Cmd(I2C2, ENABLE);
 }
 
-static void I2C2_Write(uint8_t addr, uint8_t *data, uint8_t len) {
-    while (I2C_GetFlagStatus(I2C2, I2C_FLAG_BUSY));
+static bool I2C2_Write(uint8_t addr, uint8_t *data, uint8_t len) {
+    uint32_t timeout;
+
+    timeout = 10000;
+    while (I2C_GetFlagStatus(I2C2, I2C_FLAG_BUSY)) {
+        if (--timeout == 0) return false; // Bus I2C bi ket (day long/mat LCD) -> thoat, khong treo MCU
+    }
+
     I2C_GenerateSTART(I2C2, ENABLE);
-    while (!I2C_CheckEvent(I2C2, I2C_EVENT_MASTER_MODE_SELECT));
+    timeout = 10000;
+    while (!I2C_CheckEvent(I2C2, I2C_EVENT_MASTER_MODE_SELECT)) {
+        if (--timeout == 0) return false;
+    }
 
     I2C_Send7bitAddress(I2C2, addr, I2C_Direction_Transmitter);
-    while (!I2C_CheckEvent(I2C2, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
+    timeout = 10000;
+    while (!I2C_CheckEvent(I2C2, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED)) {
+        if (--timeout == 0) return false;
+    }
 
     for (uint8_t i = 0; i < len; i++) {
         I2C_SendData(I2C2, data[i]);
-        while (!I2C_CheckEvent(I2C2, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+        timeout = 10000;
+        while (!I2C_CheckEvent(I2C2, I2C_EVENT_MASTER_BYTE_TRANSMITTED)) {
+            if (--timeout == 0) return false;
+        }
     }
 
     I2C_GenerateSTOP(I2C2, ENABLE);
+    return true;
 }
 
 static void I2C_LCD_FlushVal(void) {

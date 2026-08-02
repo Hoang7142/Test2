@@ -1,9 +1,59 @@
 #include "menu_control.h"
+#include "delay.h"  // ?? THÊM: d? dùng millis() ho?c tuong t?
 
 static uint8_t lcd_page = 0; // Bi?n n?i b? qu?n lý trang màn hình hi?n t?i (0 -> 3)
 
+// ?? FIX BUG #7: Debounce state machine thay vì blocking for loop
+#define BTN_DEBOUNCE_MS 20  // 20ms debounce
+#define BTN_HOLD_TIMEOUT_MS 500  // Timeout d? tránh nút dính
+
+typedef struct {
+    uint32_t last_press_ms;
+    uint8_t state; // 0: idle, 1: pressed
+} btn_state_t;
+
+static btn_state_t btn_next_state = {0, 0};
+static btn_state_t btn_up_state = {0, 0};
+static btn_state_t btn_down_state = {0, 0};
+
 /**
- * @brief Kh?i t?o 3 chân GPIO m?i d?ng IPU và C?u hình gi?i phóng chân JTAG cho PA15
+ * @brief L?y th?i gian hi?n t?i (ms) - c?n implement t? timer.c
+ * N?u b?n không có, dùng TIM_GetCounter ho?c tuong t?
+ */
+extern uint32_t millis(void);  // ?? YÊU C?U: c?n có hàm này t? timer.c
+
+/**
+ * @brief Hàm debounce không blocking (dùng state machine + timestamp)
+ */
+static uint8_t btn_debounce(GPIO_TypeDef* port, uint16_t pin, btn_state_t* state, uint32_t now_ms) {
+    uint8_t pin_level = GPIO_ReadInputDataBit(port, pin);
+    
+    // Nút du?c nh?n (m?c LOW)
+    if (pin_level == Bit_RESET) {
+        if (state->state == 0) { // T? idle chuy?n sang pressed
+            if (now_ms - state->last_press_ms >= BTN_DEBOUNCE_MS) {
+                state->state = 1;
+                state->last_press_ms = now_ms;
+                return 1; // ? Phát hi?n nh?n h?p l?
+            }
+        } else {
+            // Ðang trong tr?ng thái pressed - ki?m tra timeout d? tránh nút dính
+            if (now_ms - state->last_press_ms > BTN_HOLD_TIMEOUT_MS) {
+                // Nút gi? quá lâu -> reset state d? tránh "ghost press"
+                state->state = 0;
+            }
+        }
+    } 
+    // Nút du?c th? (m?c HIGH)
+    else {
+        state->state = 0; // Reset v? idle
+    }
+    
+    return 0; // Chua phát hi?n nh?n
+}
+
+/**
+ * @brief Kh?i t?o 3 chân GPIO m?i dùng IPU và C?u hình gi?i phóng chân JTAG cho PA15
  */
 void Menu_Init(void) {
     GPIO_InitTypeDef GPIO_InitStructure;
@@ -23,24 +73,28 @@ void Menu_Init(void) {
     // Kh?i d?ng màn hình LCD
     I2C_LCD_Init();
     I2C_LCD_Clear();
+    
+    // Kh?i t?o state debounce
+    btn_next_state.last_press_ms = millis();
+    btn_up_state.last_press_ms = millis();
+    btn_down_state.last_press_ms = millis();
 }
 
 /**
  * @brief Quét nút nh?n v?t lý (PA15, PA11, PA12) và thay d?i các bi?n tr?ng thái
+ * ?? FIX: Không blocking - dùng debounce state machine
  */
 void Menu_Button_Scan(menu_control_data_t *control, uint8_t *update_flag) {
+    uint32_t now_ms = millis(); // ?? YÊU C?U: hàm millis() t? timer.c
     
     // ====================================================================
     // 1. LU?NG NÚT NEXT (PA15): Chuy?n d?i qua l?i gi?a 4 trang màn hình
     // ====================================================================
-    if (GPIO_ReadInputDataBit(BTN_PORT, BTN_NEXT_PIN) == Bit_RESET) {
-        for(volatile uint32_t i = 0; i < 200000; i++); // Ch?ng rung
-        if (GPIO_ReadInputDataBit(BTN_PORT, BTN_NEXT_PIN) == Bit_RESET) {
-            lcd_page++;
-            if (lcd_page > 3) lcd_page = 0; 
-            I2C_LCD_Clear();                
-            while (GPIO_ReadInputDataBit(BTN_PORT, BTN_NEXT_PIN) == Bit_RESET); // Ch? nh? nút
-        }
+    if (btn_debounce(BTN_PORT, BTN_NEXT_PIN, &btn_next_state, now_ms)) {
+        lcd_page++;
+        if (lcd_page > 3) lcd_page = 0; 
+        I2C_LCD_Clear();
+        *update_flag = 1;
     }
 
     // ====================================================================
@@ -49,21 +103,17 @@ void Menu_Button_Scan(menu_control_data_t *control, uint8_t *update_flag) {
     
     // --- TRANG 1: CH?N CH? Ð? V?N HÀNH (AUTO HO?C MANUAL) ---
     if (lcd_page == 1) {
-        if (GPIO_ReadInputDataBit(BTN_PORT, BTN_UP_PIN) == Bit_RESET) {
-            for(volatile uint32_t i = 0; i < 200000; i++);
+        if (btn_debounce(BTN_PORT, BTN_UP_PIN, &btn_up_state, now_ms)) {
             if (control->system_mode != 1) {
                 control->system_mode = 1; // AUTO
                 *update_flag = 1;         
             }
-            while (GPIO_ReadInputDataBit(BTN_PORT, BTN_UP_PIN) == Bit_RESET);
         }
-        if (GPIO_ReadInputDataBit(BTN_PORT, BTN_DOWN_PIN) == Bit_RESET) {
-            for(volatile uint32_t i = 0; i < 200000; i++);
+        if (btn_debounce(BTN_PORT, BTN_DOWN_PIN, &btn_down_state, now_ms)) {
             if (control->system_mode != 0) {
                 control->system_mode = 0; // MANUAL
                 *update_flag = 1;         
             }
-            while (GPIO_ReadInputDataBit(BTN_PORT, BTN_DOWN_PIN) == Bit_RESET);
         }
     }
     
@@ -72,43 +122,35 @@ void Menu_Button_Scan(menu_control_data_t *control, uint8_t *update_flag) {
         
         // --- TRANG 2: ÐI?U KHI?N MÁY BOM NU?C ---
         if (lcd_page == 2) {
-            if (GPIO_ReadInputDataBit(BTN_PORT, BTN_UP_PIN) == Bit_RESET) {
-                for(volatile uint32_t i = 0; i < 200000; i++);
+            if (btn_debounce(BTN_PORT, BTN_UP_PIN, &btn_up_state, now_ms)) {
                 if (control->pump_status != 1) {
                     control->pump_status = 1; // B?t Bom
                     *update_flag = 1;
                 }
-                while (GPIO_ReadInputDataBit(BTN_PORT, BTN_UP_PIN) == Bit_RESET);
             }
-            if (GPIO_ReadInputDataBit(BTN_PORT, BTN_DOWN_PIN) == Bit_RESET) {
-                for(volatile uint32_t i = 0; i < 200000; i++);
+            if (btn_debounce(BTN_PORT, BTN_DOWN_PIN, &btn_down_state, now_ms)) {
                 if (control->pump_status != 0) {
                     control->pump_status = 0; // T?t Bom
                     *update_flag = 1;
                 }
-                while (GPIO_ReadInputDataBit(BTN_PORT, BTN_DOWN_PIN) == Bit_RESET);
             }
         }
         
         // --- TRANG 3: ÐI?U KHI?N MÁI CHE ---
         else if (lcd_page == 3) {
-            if (GPIO_ReadInputDataBit(BTN_PORT, BTN_UP_PIN) == Bit_RESET) {
-                for(volatile uint32_t i = 0; i < 200000; i++);
+            if (btn_debounce(BTN_PORT, BTN_UP_PIN, &btn_up_state, now_ms)) {
                 if (control->roof_status != MOTOR_FORWARD) {
                     control->roof_status = MOTOR_FORWARD; // M? mái
                     *update_flag = 1;
                 }
-                while (GPIO_ReadInputDataBit(BTN_PORT, BTN_UP_PIN) == Bit_RESET);
             }
-            if (GPIO_ReadInputDataBit(BTN_PORT, BTN_DOWN_PIN) == Bit_RESET) {
-                for(volatile uint32_t i = 0; i < 200000; i++);
+            if (btn_debounce(BTN_PORT, BTN_DOWN_PIN, &btn_down_state, now_ms)) {
                 if (control->roof_status == MOTOR_BACKWARD) {
                     control->roof_status = MOTOR_STOP;    // B?m DOWN ti?p khi dang dóng -> D?NG
                 } else {
                     control->roof_status = MOTOR_BACKWARD; // Ðóng mái
                 }
                 *update_flag = 1;
-                while (GPIO_ReadInputDataBit(BTN_PORT, BTN_DOWN_PIN) == Bit_RESET);
             }
         }
     }

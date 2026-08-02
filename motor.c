@@ -2,6 +2,13 @@
 #include "motor.h"
 #include "delay.h"
 
+
+/* === Bi?n debounce d? ki?m tra công t?c hành trình === */
+static uint8_t roof_open_debounce = 0;    // Counter cho công t?c OPEN (PB7)
+static uint8_t roof_close_debounce = 0;   // Counter cho công t?c CLOSE (PB8)
+
+#define DEBOUNCE_THRESHOLD 3  // Ph?i d?c 3 l?n liên ti?p m?i xác nh?n
+
 void Motor_Init(void) {
     GPIO_InitTypeDef  GPIO_InitStructure;
     TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
@@ -82,37 +89,74 @@ void Motor1_Dir(uint8_t dir) {
     }
 }
 
-void Pump_On(void) {
-    TIM_SetCompare1(TIM1, 500); /* Thang chu ky la 1000 -> 500 la 50% */
+/**
+ * @brief Set t?c d? bom nu?c (0-100%)
+ * ?? FIX: Hàm này nh?n PWM t? 0-100, không c? d?nh 50%
+ */
+void Pump_SetSpeed(uint16_t speed) {
+    if (speed > 100) speed = 100;
+    TIM_SetCompare1(TIM1, speed * 10); // Nhân 10 vì Period là 1000
 }
 
 /**
- * @brief Tat may bom nuoc (PA8)
+ * @brief B?t bom (100%)
  */
-void Pump_Off(void) {
-    TIM_SetCompare1(TIM1, 0);   /* Dua xung ve 0% */
+void Pump_On(void) {
+    Pump_SetSpeed(100);  // B?t 100%
 }
 
-/* ==================================================================== */
-/* ?? [B? SUNG M?I] HÀM GIÁM SÁT VÀ ÉP NG?T MOTOR KHI CH?M ÐÍCH         */
-/* ==================================================================== */
+/**
+ * @brief T?t bom (0%)
+ */
+void Pump_Off(void) {
+    Pump_SetSpeed(0);    // T?t 0%
+}
+
+/**
+ * @brief Giám sát hành trình mái che - Không ch?n lu?ng (Non-blocking debounce)
+ * ?? FIX: Dùng software debounce thay vì Delay_Ms
+ */
 void Motor_Roof_Safety_Supervisor(uint8_t *roof_status, uint8_t *update_flag) {
     
-    // 1. N?u tr?ng thái logic dang là M? MÁI mà chân PB7 b? ch?m (xu?ng m?c 0)
+    // === TRU?NG H?P 1: Mái dang M? (MOTOR_FORWARD) - Ki?m tra công t?c OPEN (PB7) ===
     if (*roof_status == MOTOR_FORWARD) {
-			  Delay_Ms(5);
+        // N?u công t?c OPEN b? ch?m (m?c 0 = Bit_RESET)
         if (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_7) == Bit_RESET) {
-            *roof_status = MOTOR_STOP;  // Ép tr?ng thái logic v? STOP
-            *update_flag = 1;          // Kích ho?t c? d? main.c v? l?i LCD và báo lên Web
+            roof_open_debounce++;  // Tang counter
+            
+            // N?u d?c du?c 3 l?n liên ti?p ? xác nh?n ch?m công t?c
+            if (roof_open_debounce >= DEBOUNCE_THRESHOLD) {
+                *roof_status = MOTOR_STOP;  // Ép tr?ng thái v? STOP
+                *update_flag = 1;           // Báo c?p nh?t LCD + Web
+                roof_open_debounce = 0;     // Reset counter
+            }
+        } else {
+            // N?u công t?c th? ra (m?c 1) ? reset counter
+            roof_open_debounce = 0;
         }
+    } else {
+        // N?u không ph?i MOTOR_FORWARD ? reset counter
+        roof_open_debounce = 0;
     }
 
-    // 2. N?u tr?ng thái logic dang là ÐÓNG MÁI mà chân PB8 b? ch?m (xu?ng m?c 0)
+    // === TRU?NG H?P 2: Mái dang ÐÓNG (MOTOR_BACKWARD) - Ki?m tra công t?c CLOSE (PB8) ===
     if (*roof_status == MOTOR_BACKWARD) {
-			  Delay_Ms(5);
+        // N?u công t?c CLOSE b? ch?m (m?c 0 = Bit_RESET)
         if (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_8) == Bit_RESET) {
-            *roof_status = MOTOR_STOP;  // Ép tr?ng thái logic v? STOP
-            *update_flag = 1;          // Kích ho?t c? d? main.c v? l?i LCD và báo lên Web
+            roof_close_debounce++;  // Tang counter
+            
+            // N?u d?c du?c 3 l?n liên ti?p ? xác nh?n ch?m công t?c
+            if (roof_close_debounce >= DEBOUNCE_THRESHOLD) {
+                *roof_status = MOTOR_STOP;  // Ép tr?ng thái v? STOP
+                *update_flag = 1;           // Báo c?p nh?t LCD + Web
+                roof_close_debounce = 0;    // Reset counter
+            }
+        } else {
+            // N?u công t?c th? ra (m?c 1) ? reset counter
+            roof_close_debounce = 0;
         }
+    } else {
+        // N?u không ph?i MOTOR_BACKWARD ? reset counter
+        roof_close_debounce = 0;
     }
 }
