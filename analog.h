@@ -11,6 +11,7 @@ typedef struct {
     uint16_t raw_water;
     uint8_t  water_percent;
 
+    uint16_t raw_current; /* ACS712 ADC raw (PB0 / CH8) */
     float current_ampe;
 } Analog_Data_t;
 

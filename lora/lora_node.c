@@ -54,7 +54,7 @@ static bool send_packet(lora_node_t *node, const lora_packet_t *pkt) {
            (unsigned)wire_len);
 
   if (!node->radio.send(wire, wire_len)) {
-    node_log(node, "TX radio send failed\r\n");
+    node_log(node, "[ERR] LoRa TX fail (lost pkt?)\r\n");
     return false;
   }
 
@@ -74,6 +74,9 @@ static bool handle_read_sensor(lora_node_t *node, const lora_packet_t *request) 
       payload_len = LORA_MAX_PAYLOAD;// khong che du lieu tranh mang bi tran
     }
   }
+  if (payload_len == 0) {
+    node_log(node, "[ERR] Sensor payload empty\r\n");
+  }
 
   node_log(node, "Sensor payload %u bytes\r\n", (unsigned)payload_len);
 
@@ -81,7 +84,7 @@ static bool handle_read_sensor(lora_node_t *node, const lora_packet_t *request) 
   if (!lora_packet_build(&response, node->config.gateway_id, node->config.node_id,
                          CMD_SENSOR_DATA, request->seq, sensor_payload,
                          payload_len)) {// goi ham dong goi du lieu, cmd ->CMD_SENSOR_DATA bao day la du lieu cam bien
-    node_log(node, "Build SENSOR_DATA response failed\r\n");
+    node_log(node, "[ERR] Build SENSOR_DATA fail\r\n");
     return false;
   }
 
@@ -95,7 +98,7 @@ static bool handle_ping(lora_node_t *node, const lora_packet_t *request) {// ham
 
   if (!lora_packet_build(&response, node->config.gateway_id, node->config.node_id,
                          CMD_ACK, request->seq, NULL, 0)) {
-    node_log(node, "Build ACK response failed\r\n");
+    node_log(node, "[ERR] Build PING ACK fail\r\n");
     return false;
   }
 
@@ -159,7 +162,7 @@ bool lora_node_send_ack(lora_node_t *node, const lora_control_payload_t *state) 
                          CMD_ACK, node->pending_request.seq,
                          (const uint8_t*)state, sizeof(*state))) {
     if (node->config.log != NULL) {
-      node->config.log("Build ACK (trang thai that) failed\r\n");
+      node->config.log("[ERR] Build control ACK fail\r\n");
     }
     return false;
   }
@@ -223,7 +226,7 @@ void lora_node_poll(lora_node_t* node) {
   const int rx_len = node->radio.receive(raw, sizeof(raw), &rssi); // do byte du lieu tho vao mang raw
   if (rx_len <= 0) {                                               
     if (rx_len < 0) {
-      node_log(node, "RX CRC/error\r\n");// kiem tra coi co bi loi k
+      node_log(node, "[ERR] LoRa RX CRC (noise/lost)\r\n");
     }
     return;
   }
@@ -232,7 +235,7 @@ void lora_node_poll(lora_node_t* node) {
 // 3. Giai ma va kiem tra tem chong gia
   lora_packet_t pkt;
   if (!lora_packet_decode(raw, (size_t)rx_len, &pkt)) {
-    node_log(node, "RX decode failed\r\n");
+    node_log(node, "[ERR] LoRa decode/CRC bad\r\n");
     return;// thay raw vao ham decorder de kiem tra crc va boc tach du lieu ptk, neu giai ma loi huy goi tinh luon
   }
 

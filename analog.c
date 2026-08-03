@@ -129,13 +129,15 @@ void Analog_UpdateAll(Analog_Data_t *data) {
     }
 
     // Cap nhat Dong dien (Dung global_zero_point da calib)
-    uint16_t raw_i = ADC_Read_Filter(ADC_Channel_8);
-    float v_pin = (float)raw_i * 3.3f / 4095.0f;
-    float curr = (v_pin - global_zero_point) / 0.185f;
+    data->raw_current = ADC_Read_Filter(ADC_Channel_8);
+    {
+        float v_pin = (float)data->raw_current * 3.3f / 4095.0f;
+        float curr = (v_pin - global_zero_point) / 0.185f;
 
-    if (curr < 0.03f && curr > -0.03f) curr = 0;
-    if (curr < 0) data->current_ampe = -curr;
-    else data->current_ampe = curr;
+        if (curr < 0.03f && curr > -0.03f) curr = 0;
+        if (curr < 0) data->current_ampe = -curr;
+        else data->current_ampe = curr;
+    }
 }
 
 
