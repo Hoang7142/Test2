@@ -79,8 +79,9 @@ typedef struct LORA_PACKED {
     uint8_t system_mode;  // 1: AUTO, 0: MANUAL
     uint8_t pump_status;  // 1: ON, 0: OFF
     uint8_t roof_status;  // 1: OPEN, 2: CLOSE, 0: STOP
-	// --- CH?N TH?M BI?N N?Y ?? B?O M? L?I L?N M?NG ---
     uint8_t pump_diagnostic; /* pump_diagnostic_t: OK/DRY_RUN/OVERLOAD/WATER_EMPTY */
+    uint8_t pump_pwm;     /* 0..100 — dong bo LCD/Web */
+    uint8_t roof_pwm;     /* 0..100 */
 } __attribute__((packed)) lora_sensor_payload_t;
 
 uint16_t lora_crc16(const uint8_t* data, size_t len);

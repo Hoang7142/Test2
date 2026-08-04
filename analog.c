@@ -105,15 +105,15 @@ uint16_t ADC_Read_Filter(uint8_t channel) {
 void Analog_UpdateAll(Analog_Data_t *data) {
     // Cap nhat Soil
     data->raw_soil = ADC_Read_Filter(ADC_Channel_0);
-    int16_t s_res = (4000 - (int16_t)data->raw_soil) * 100 / (4000 - 1500);
+    int16_t s_res = (4084 - (int16_t)data->raw_soil) * 100 / (4084 - 1250);
     if (s_res > 100) data->soil_percent = 100;
     else if (s_res < 0) data->soil_percent = 0;
     else data->soil_percent = s_res;
 
     // Cap nhat Nuoc — map 2 diem (cam bien PCB khong dat ADC=4095 khi full)
-    // Calib: kho ~0% cu (~ADC 0), nhung full ~55% cu (~ADC 2252) -> 100%
+    // Calib: kho ~0% cu (~ADC 0), nhung full ~55% cu (~ADC 2470) -> 100%
     #define WATER_ADC_DRY  0
-    #define WATER_ADC_WET  2252  /* 55% * 4095 / 100 */
+    #define WATER_ADC_WET  2470  /* 55% * 4095 / 100 */
     data->raw_water = ADC_Read_Filter(ADC_Channel_2);
     {
         int16_t w_res;

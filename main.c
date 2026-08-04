@@ -287,10 +287,12 @@
      sample.flow_rate_Lmin_x10 = (uint8_t)((flow_x10 > 255u) ? 255u : flow_x10);
  
      // 5. Trang thai vuon len Web
-     sample.system_mode = g_system_control.system_mode;
-     sample.pump_status = g_system_control.pump_status;
-     sample.roof_status = g_system_control.roof_status;
-     sample.pump_diagnostic = (uint8_t)g_pump_diagnostic;
+    sample.system_mode = g_system_control.system_mode;
+    sample.pump_status = g_system_control.pump_status;
+    sample.roof_status = g_system_control.roof_status;
+    sample.pump_diagnostic = (uint8_t)g_pump_diagnostic;
+    sample.pump_pwm = current_pump_pwm;
+    sample.roof_pwm = current_roof_pwm;
  
      /* Snapshot cam bien: chi in ~5s/lan (HB) de UART uu tien [ERR] */
      {
@@ -304,7 +306,7 @@
                        (unsigned)sample.soil_moisture,
                        (unsigned)sample.water_level,
                        (unsigned)sample.current_mA,
-                       (sample.rain_status == 0) ? "YES" : "NO",
+                       (sample.rain_status == 0) ? "Y" : "N",
                        (unsigned)(sample.flow_rate_Lmin_x10 / 10),
                        (unsigned)(sample.flow_rate_Lmin_x10 % 10));
          }
@@ -320,7 +322,8 @@
  static uint8_t my_read_sensor_wrapper(uint8_t *payload, uint8_t max_len) {
      return my_read_sensor(payload, max_len);  // ? Ch? 2 tham s?
  }
- // ===== MAIN =====
+#if 1 /* ===== MAIN DEMO (dang chay) ===== */
+// ===== MAIN =====
  int main(void) {
      LED_Init();
  
@@ -460,7 +463,10 @@
                                          // ------------------------------------------------------------------
                                          // A. THEM: LUON QUET NUT BAM VAT LY NGOAI VUON DE CAP NHAT TRANG THAI
                                          // ------------------------------------------------------------------
-                                         Menu_Button_Scan(&g_system_control, &g_lcd_update);
+                                         Menu_Button_Scan(&g_system_control,
+                                                          &current_pump_pwm,
+                                                          &current_roof_pwm,
+                                                          &g_lcd_update);
  
                                          // 1. Luon luon quet song LoRa de nhan du lieu
                                          lora_node_poll(&node);
@@ -686,7 +692,9 @@
                                          // ------------------------------------------------------------------
 
                                          if (g_lcd_update) {
-                                                 Menu_Display_Update(&g_system_control);
+                                                 Menu_Display_Update(&g_system_control,
+                                                                     current_pump_pwm,
+                                                                     current_roof_pwm);
                                                  g_lcd_update = 0; // Xoa co sau khi cap nhat man hinh xong
                                          }
 
@@ -698,4 +706,83 @@
          }
      }
  }
- 
+
+#endif /* MAIN DEMO */
+
+#if 0 /* ===== MAIN CALIB ADC — bat #if 1 + tat MAIN DEMO khi can do raw lai ===== */
+static int UART_TryGetChar(char *out)
+{
+    if (USART_GetFlagStatus(USART1, USART_FLAG_RXNE) == RESET)
+        return 0;
+    *out = (char)USART_ReceiveData(USART1);
+    return 1;
+}
+
+static void calib_print_help(void)
+{
+    UART_SendString("\r\n========== ADC CALIB (raw) ==========\r\n");
+    UART_SendString("  0 = bom OFF (ACS idle)\r\n");
+    UART_SendString("  5 = bom 50%\r\n");
+    UART_SendString("  1 = bom 100%  (hoac f)\r\n");
+    UART_SendString("  h = help\r\n");
+    UART_SendString("Soil/Water: kho / giua / uot — ghi raw_soil, raw_water\r\n");
+    UART_SendString("=====================================\r\n\r\n");
+}
+
+static void calib_apply_pump(uint8_t pwm_pct)
+{
+    if (pwm_pct == 0u) {
+        Pump_Off();
+        debug_log("[PUMP] OFF\r\n");
+    } else {
+        if (pwm_pct > 100u) pwm_pct = 100u;
+        Pump_SetSpeed(pwm_pct);
+        debug_log("[PUMP] ON pwm=%u%%\r\n", (unsigned)pwm_pct);
+    }
+}
+
+int main(void)
+{
+    Analog_Data_t d;
+    uint8_t pump_pwm = 0;
+    uint32_t last_print_ms = 0;
+
+    UART1_Init(115200);
+    TIM2_Init();
+    TIM4_HeartbeatInit();
+
+    UART_SendString("\r\n***** MAIN CALIB ADC — KHONG PHAI DEMO *****\r\n");
+    Analog_Init();
+    Motor_Init();
+    Pump_Off();
+    Delay_Ms(500);
+    Analog_Calibrate();
+    debug_log("[Boot] Analog + ACS zero + Motor OK\r\n");
+    calib_print_help();
+
+    last_print_ms = millis();
+    while (1) {
+        char c;
+        if (UART_TryGetChar(&c)) {
+            if (c == '0') { pump_pwm = 0; calib_apply_pump(0); }
+            else if (c == '5') { pump_pwm = 50; calib_apply_pump(50); }
+            else if (c == '1' || c == 'f' || c == 'F') { pump_pwm = 100; calib_apply_pump(100); }
+            else if (c == 'h' || c == 'H') { calib_print_help(); }
+        }
+        if ((millis() - last_print_ms) >= 1000u) {
+            float v_acs;
+            last_print_ms = millis();
+            Analog_UpdateAll(&d);
+            v_acs = (float)d.raw_current * 3.3f / 4095.0f;
+            debug_log("[RAW] soil=%4u  water=%4u  acs=%4u  Vacs=%.3f  I_old=%.2fA  pump=%u%%\r\n",
+                      (unsigned)d.raw_soil,
+                      (unsigned)d.raw_water,
+                      (unsigned)d.raw_current,
+                      (double)v_acs,
+                      (double)d.current_ampe,
+                      (unsigned)pump_pwm);
+        }
+        Delay_Ms(10);
+    }
+}
+#endif /* MAIN CALIB */
