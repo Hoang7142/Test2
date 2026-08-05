@@ -186,7 +186,6 @@
             <RvdsVP>0</RvdsVP>
             <RvdsMve>0</RvdsMve>
             <RvdsCdeCp>0</RvdsCdeCp>
-            <nBranchProt>0</nBranchProt>
             <hadIRAM2>0</hadIRAM2>
             <hadIROM2>0</hadIROM2>
             <StupSel>8</StupSel>
@@ -340,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>STM32F10X_MD,USE_STDPERIPH_DRIVER</Define>
               <Undefine></Undefine>
-              <IncludePath>.\lora;..\..\code da merge;.\Libraries\CMSIS\CM3\CoreSupport;.\Libraries\STM32F10x_StdPeriph_Driver\src;..\..\STM32F103_20250407;..\..\STM32F103_20250407\Libraries;.\Libraries\CMSIS\CM3\CoreSupport;.\Libraries\STM32F10x_StdPeriph_Driver\src;.\Libraries\STM32F10x_StdPeriph_Driver\inc;.\Libraries\STM32F10x_StdPeriph_Driver\src;.\Libraries\CMSIS\CM3\CoreSupport</IncludePath>
+              <IncludePath>..\Test2;.\lora;.\Libraries\CMSIS\CM3\CoreSupport;.\Libraries\STM32F10x_StdPeriph_Driver\inc;.\Libraries;.\Libraries\CMSIS\CM3\CoreSupport</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -590,6 +589,11 @@
     <Layers>
       <Layer>
         <LayName>TEST2</LayName>
+        <LayDesc></LayDesc>
+        <LayUrl></LayUrl>
+        <LayKeys></LayKeys>
+        <LayCat></LayCat>
+        <LayLic></LayLic>
         <LayTarg>0</LayTarg>
         <LayPrjMark>1</LayPrjMark>
       </Layer>
