@@ -19,7 +19,7 @@ extern "C" {
 
 /** Set one ID per board at compile time: 0x11, 0x12, or 0x13. */
 #ifndef MY_NODE_ID
-#define MY_NODE_ID                0x11 // TODO: Update to correct node ID by reading from input GPIO
+#define MY_NODE_ID                0x10 // TODO: Update to correct node ID by reading from input GPIO
 #endif
 
 #define GATEWAY_ID                LORA_GATEWAY_ID

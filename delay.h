@@ -8,3 +8,4 @@
 void Delay1MS(void);
 void Delay_Ms(uint32_t u32DelayInMs);
 void Delay_Us(uint32_t Delay);
+uint32_t millis(void);  // ?? THÊM DÒNG NÀY

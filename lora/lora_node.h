@@ -57,6 +57,14 @@ void lora_node_init(lora_node_t* node, const lora_node_config_t* config,
 void lora_node_poll(lora_node_t* node);
 
 lora_node_state_t lora_node_get_state(const lora_node_t* node);
+/**
+ * @brief G?i CMD_ACK ph?n h?i l?nh WRITE_CONTROL, dùng TR?NG THÁI TH?T
+ *        (sau khi dã áp d?ng AUTO/an toàn), không ph?i l?nh v?a nh?n.
+ * @param node   Node instance.
+ * @param state  Tr?ng thái th?t cu?i cùng d? dóng gói g?i lên Gateway.
+ * @return true n?u g?i thành công.
+ */
+bool lora_node_send_ack(lora_node_t* node, const lora_control_payload_t* state);
 
 #ifdef __cplusplus
 }
