@@ -41,7 +41,7 @@
      .roof_status = 0  // 0 = STOP, MOTOR_FORWARD = OPEN, MOTOR_BACKWARD = CLOSE
  };
  uint8_t g_lcd_update = 1; // C? b?o hi?u c?n v? l?i m?n h?nh LCD
- uint8_t current_roof_pwm = 15; // Luu t?c d? m?i che nh?n t? Web
+ uint8_t current_roof_pwm = 20; // Luu t?c d? m?i che nh?n t? Web
  /* Bi?n qu?n l? ch?n do?n l?i tr?m bom th?c t? */
  uint8_t current_pump_pwm = 100;
  volatile pump_diagnostic_t g_pump_diagnostic = PUMP_DIAG_OK;
@@ -68,6 +68,16 @@
  uint8_t g_pump_cooldown_sec = 15; /* 0..60: nghi sau Auto tat bom (GUI chinh) */
  static uint32_t s_pump_cooldown_until = 0;
  static uint8_t g_runtime_node_id = 0;
+
+ /* Auto mai: latch bien + timeout (tranh nh? CTHT l?i ch?y / k?t không CTHT) */
+ #define ROOF_MOVE_TIMEOUT_MS  30000u
+ static uint8_t s_roof_latched_open = 0;   /* da toi bien OPEN (PB7) */
+ static uint8_t s_roof_latched_close = 0;  /* da toi bien CLOSE (PB8) */
+ static uint8_t s_roof_move_fault = 0;     /* timeout — giu STOP den khi doi trang thai mua */
+ static uint8_t s_roof_prev_rain = 0xFFu;
+ static uint8_t s_roof_was_moving = 0;
+ static uint32_t s_roof_move_since_ms = 0;
+ static uint8_t s_prev_system_mode = 0xFFu;
  
  static uint8_t read_dip_node_id(void)
  {
@@ -557,29 +567,93 @@
                                                          g_lcd_update = 1;
                                                  }
  
-                                                 // 2. Tu dong dieu khien MAI CHE dua vao cam bien mua & cong tac hanh trinh (?NH ?EN CHU?N)
-                                                 if (Rain_Read() == 0) { // ?ang MUA -> Mu?n ??NG m?i
-                                                         // Ch? ra l?nh ??NG n?u hi?n t?i m?i chua ? tr?ng th?i ??NG 
-                                                         // V? c?ng t?c h?nh tr?nh ??NG (PB8) chua b? ch?m (m?c 1 l? chua ch?m)
-                                                         if (g_system_control.roof_status != MOTOR_BACKWARD && GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_8) == Bit_SET) {
-                                                                 g_system_control.roof_status = MOTOR_BACKWARD;
-                                                                 g_lcd_update = 1; // D?ng c? v? LCD 1 l?n duy nh?t khi b?t d?u ch?y
+                                                 // 2. Auto MAI: mua -> CLOSE, kho -> OPEN
+                                                 // Latch bien: sau khi toi CTHT (hoac timeout) giu STOP, khong chay lai khi nha CTHT
+                                                 {
+                                                         uint8_t raining = (Rain_Read() == 0) ? 1u : 0u;
+                                                         uint8_t lim_open = (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_7) == Bit_RESET) ? 1u : 0u;
+                                                         uint8_t lim_close = (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_8) == Bit_RESET) ? 1u : 0u;
+                                                         uint8_t roof = g_system_control.roof_status;
+
+                                                         /* Vao Auto: doc CTHT hien tai de latch */
+                                                         if (s_prev_system_mode != 1u) {
+                                                                 s_roof_latched_open = lim_open;
+                                                                 s_roof_latched_close = lim_close;
+                                                                 s_roof_move_fault = 0;
+                                                                 s_roof_was_moving = 0;
                                                          }
-                                                 } else { // Tr?nh kh?ng mua -> Mu?n M? m?i
-                                                         // ?? FIX: N?u m?i dang ??NG (MOTOR_BACKWARD), ph?i D?NG tru?c (STOP)
-                                                         if (g_system_control.roof_status == MOTOR_BACKWARD) {
-                                                                 // Chuy?n sang STOP d? motor d?ng quay ngu?c
-                                                                 g_system_control.roof_status = 0; // STOP
-                                                                 g_lcd_update = 1;
-                                                         } 
-                                                         // Sau khi d? STOP, b?y gi? m?i chuy?n MOTOR_FORWARD
-                                                         else if (g_system_control.roof_status != MOTOR_FORWARD && 
-                                                                          GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_7) == Bit_SET) {
-                                                                 g_system_control.roof_status = MOTOR_FORWARD;
-                                                                 g_lcd_update = 1;
+
+                                                         /* Doi trang thai mua: cho phep chu ky moi, xoa fault */
+                                                         if (s_roof_prev_rain != 0xFFu && s_roof_prev_rain != raining) {
+                                                                 s_roof_move_fault = 0;
+                                                                 if (raining) {
+                                                                         s_roof_latched_open = 0;
+                                                                 } else {
+                                                                         s_roof_latched_close = 0;
+                                                                 }
+                                                         }
+                                                         s_roof_prev_rain = raining;
+
+                                                         if (s_roof_move_fault) {
+                                                                 if (roof != MOTOR_STOP) {
+                                                                         g_system_control.roof_status = MOTOR_STOP;
+                                                                         g_lcd_update = 1;
+                                                                 }
+                                                         } else if (raining) {
+                                                                 /* ---- MUA: muon CLOSE ---- */
+                                                                 if (lim_close) {
+                                                                         s_roof_latched_close = 1;
+                                                                         s_roof_latched_open = 0;
+                                                                         if (roof != MOTOR_STOP) {
+                                                                                 g_system_control.roof_status = MOTOR_STOP;
+                                                                                 g_lcd_update = 1;
+                                                                         }
+                                                                 } else if (s_roof_latched_close) {
+                                                                         if (roof != MOTOR_STOP) {
+                                                                                 g_system_control.roof_status = MOTOR_STOP;
+                                                                                 g_lcd_update = 1;
+                                                                         }
+                                                                 } else if (roof == MOTOR_FORWARD) {
+                                                                         g_system_control.roof_status = MOTOR_STOP;
+                                                                         g_lcd_update = 1;
+                                                                 } else if (roof != MOTOR_BACKWARD) {
+                                                                         g_system_control.roof_status = MOTOR_BACKWARD;
+                                                                         g_lcd_update = 1;
+                                                                 }
+                                                         } else {
+                                                                 /* ---- KHONG MUA: muon OPEN ---- */
+                                                                 if (lim_open) {
+                                                                         s_roof_latched_open = 1;
+                                                                         s_roof_latched_close = 0;
+                                                                         if (roof != MOTOR_STOP) {
+                                                                                 g_system_control.roof_status = MOTOR_STOP;
+                                                                                 g_lcd_update = 1;
+                                                                         }
+                                                                 } else if (s_roof_latched_open) {
+                                                                         if (roof != MOTOR_STOP) {
+                                                                                 g_system_control.roof_status = MOTOR_STOP;
+                                                                                 g_lcd_update = 1;
+                                                                         }
+                                                                 } else if (roof == MOTOR_BACKWARD) {
+                                                                         g_system_control.roof_status = MOTOR_STOP;
+                                                                         g_lcd_update = 1;
+                                                                 } else if (roof != MOTOR_FORWARD) {
+                                                                         g_system_control.roof_status = MOTOR_FORWARD;
+                                                                         g_lcd_update = 1;
+                                                                 }
                                                          }
                                                  }
+                                         } else {
+                                                 /* Manual: xoa latch/fault Auto; timeout van ap dung khi dang quay */
+                                                 if (s_prev_system_mode == 1u) {
+                                                         s_roof_latched_open = 0;
+                                                         s_roof_latched_close = 0;
+                                                         s_roof_move_fault = 0;
+                                                         s_roof_was_moving = 0;
+                                                         s_roof_prev_rain = 0xFFu;
+                                                 }
                                          }
+                                         s_prev_system_mode = g_system_control.system_mode;
  
                                          // ------------------------------------------------------------------
                                          // C. CHAN DOAN LOI BOM — uu tien: 3 can bon > 2 overload > 1 dry-run
@@ -654,6 +728,39 @@
                                          // ------------------------------------------------------------------
                      clamp_pump_for_water(&g_system_control.pump_status, shared_adc_data.water_percent);
                      Motor_Roof_Safety_Supervisor((uint8_t *)&g_system_control.roof_status, &g_lcd_update);
+
+                                         /* Dong bo latch khi CTHT dang nhan (sau supervisor) — Auto moi dung */
+                                         if (g_system_control.system_mode == 1) {
+                                                 if (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_8) == Bit_RESET) {
+                                                         s_roof_latched_close = 1;
+                                                         s_roof_latched_open = 0;
+                                                 }
+                                                 if (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_7) == Bit_RESET) {
+                                                         s_roof_latched_open = 1;
+                                                         s_roof_latched_close = 0;
+                                                 }
+                                         }
+
+                                         /* Timeout mai: chay qua lau khong toi CTHT -> STOP (Auto: fault, doi mua moi thu lai) */
+                                         {
+                                                 uint8_t roof_now = g_system_control.roof_status;
+                                                 if (roof_now == MOTOR_FORWARD || roof_now == MOTOR_BACKWARD) {
+                                                         if (!s_roof_was_moving) {
+                                                                 s_roof_move_since_ms = millis();
+                                                                 s_roof_was_moving = 1;
+                                                         } else if ((uint32_t)(millis() - s_roof_move_since_ms) >= ROOF_MOVE_TIMEOUT_MS) {
+                                                                 g_system_control.roof_status = MOTOR_STOP;
+                                                                 g_lcd_update = 1;
+                                                                 s_roof_was_moving = 0;
+                                                                 if (g_system_control.system_mode == 1) {
+                                                                         s_roof_move_fault = 1;
+                                                                 }
+                                                         }
+                                                 } else {
+                                                         s_roof_was_moving = 0;
+                                                 }
+                                         }
+
                                          /* ---------------- A. DIEU KHIEN MAY BOM ---------------- */
  
                                          if (g_system_control.pump_status == 1) {
