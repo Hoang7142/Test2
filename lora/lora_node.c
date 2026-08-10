@@ -109,6 +109,7 @@ extern volatile lora_control_payload_t g_remote_control;
 extern volatile uint8_t g_control_updated;
 extern uint8_t g_soil_on_threshold;
 extern uint8_t g_soil_off_threshold;
+extern uint8_t g_pump_cooldown_sec;
 volatile uint8_t g_ack_pending = 0; // C? b?o: c? ACK dang ch? g?i (sau khi main.c x? l? xong)
 // ?? H?M M?I: B?c t?ch d? li?u n?t b?m t? ESP32 g?i xu?ng v? d?y qua cho main x? l? ph?n c?ng
 /** @brief H?ng l?nh ghi di?u khi?n t? Web xu?ng v? ??NG G?I TR?NG TH?I TH?C T? v?o g?i ACK g?i ngu?c l?n */
@@ -140,16 +141,24 @@ static bool handle_write_control(lora_node_t *node, const lora_packet_t *request
 }
 
 static bool handle_set_thresholds(lora_node_t *node, const lora_packet_t *request) {
-  if (request->payload_len == sizeof(lora_threshold_payload_t)) {
-    lora_threshold_payload_t th;
-    memcpy(&th, request->payload, sizeof(th));
-    if (th.soil_on < th.soil_off && th.soil_on <= 100 && th.soil_off <= 100) {
-      g_soil_on_threshold = th.soil_on;
-      g_soil_off_threshold = th.soil_off;
-      if (node->config.log != NULL) {
-        node->config.log("[LoRa] Thresholds updated: ON<%u OFF>%u\r\n",
-                         (unsigned)th.soil_on, (unsigned)th.soil_off);
+  if (request->payload_len >= 2) {
+    uint8_t soil_on = request->payload[0];
+    uint8_t soil_off = request->payload[1];
+    if (soil_on < soil_off && soil_on <= 100 && soil_off <= 100) {
+      g_soil_on_threshold = soil_on;
+      g_soil_off_threshold = soil_off;
+    }
+    if (request->payload_len >= 3) {
+      uint8_t c = request->payload[2];
+      if (c > 60u) {
+        c = 60u;
       }
+      g_pump_cooldown_sec = c;
+    }
+    if (node->config.log != NULL) {
+      node->config.log("[LoRa] Thresholds updated: ON<%u OFF>%u cool=%us\r\n",
+                       (unsigned)g_soil_on_threshold, (unsigned)g_soil_off_threshold,
+                       (unsigned)g_pump_cooldown_sec);
     }
   }
   return true;

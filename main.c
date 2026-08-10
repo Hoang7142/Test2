@@ -41,7 +41,7 @@
      .roof_status = 0  // 0 = STOP, MOTOR_FORWARD = OPEN, MOTOR_BACKWARD = CLOSE
  };
  uint8_t g_lcd_update = 1; // C? b?o hi?u c?n v? l?i m?n h?nh LCD
- uint8_t current_roof_pwm = 100; // Luu t?c d? m?i che nh?n t? Web
+ uint8_t current_roof_pwm = 15; // Luu t?c d? m?i che nh?n t? Web
  /* Bi?n qu?n l? ch?n do?n l?i tr?m bom th?c t? */
  uint8_t current_pump_pwm = 100;
  volatile pump_diagnostic_t g_pump_diagnostic = PUMP_DIAG_OK;
@@ -56,10 +56,17 @@
  
  /* === Bi?n t?m d? truy?n ADC data d?n h?m callback LoRa === */
  static Analog_Data_t g_current_adc_data = {0};
+
+ /* DHT cach A: cap nhat khi LoRa goi my_read_sensor; Auto khoa tuoi neu T cao */
+ static uint8_t g_temp_c = 25;
+ static uint8_t g_dht_ok = 0;
+ #define TEMP_BLOCK_C  35u  /* T >= 35: cam bom (chi Auto) */
  
  #define WATER_EMPTY_PERCENT  10
  uint8_t g_soil_on_threshold = 30;
  uint8_t g_soil_off_threshold = 80;
+ uint8_t g_pump_cooldown_sec = 15; /* 0..60: nghi sau Auto tat bom (GUI chinh) */
+ static uint32_t s_pump_cooldown_until = 0;
  static uint8_t g_runtime_node_id = 0;
  
  static uint8_t read_dip_node_id(void)
@@ -265,6 +272,8 @@
          if (dht_st == DHT11_OK) {
              sample.temperature_c10 = (int16_t)temp * 10;
              sample.humidity_pct10 = (uint16_t)humi * 10;
+             g_temp_c = temp;
+             g_dht_ok = 1;
          } else if (dht_st == DHT11_ERR_NO_RESP) {
              debug_err_throttle(&s_dht_err_ms, 3000u,
                                 "[ERR] DHT no resp (loose/power)\r\n");
@@ -341,11 +350,9 @@
      DHT11_Init();
      debug_log("[Boot] DHT OK\r\n");
  
-     // --- ??I KH?C N?Y TH?NH FILE G?P ANALOG M?I ---
+     /* ADC truoc; ACS zero calib SAU Motor+Pump_Off+delay (giong MAIN CALIB) */
      debug_log("[Boot] Analog\r\n");
-     Analog_Init(); 
-     debug_log("[Boot] ACS712 calib\r\n");
-     Analog_Calibrate();
+     Analog_Init();
      debug_log("[Boot] Analog OK\r\n");
  #if PUMP_PROTECT_DISABLE
      debug_log("[Boot] PUMP PROT OFF\r\n");
@@ -356,6 +363,11 @@
      
      debug_log("[Boot] Flow+Motor\r\n");
      Motor_Init();
+     Pump_Off();
+     Delay_Ms(500);
+     debug_log("[Boot] ACS712 calib\r\n");
+     Analog_Calibrate();
+     debug_log("[Boot] ACS712 calib OK\r\n");
      FlowSensor_Init();
      
      debug_log("[Boot] Menu/LCD\r\n");
@@ -423,27 +435,27 @@
                                                  /* Rain DO + IPU: day tin hieu long => luon "kho" (giong khong mua)
                                                   * — khong the in [ERR] open ma khong bao nham. */
  
-                                                 if (shared_adc_data.raw_soil <= 5u
-                                                         || shared_adc_data.raw_soil >= 4090u) {
-                                                         debug_err_throttle(&s_soil_err_ms, 5000u,
-                                                                 "[ERR] Soil ADC open/short?\r\n");
-                                                 }
-                                                 if (shared_adc_data.raw_water <= 5u
-                                                         || shared_adc_data.raw_water >= 4090u) {
-                                                         debug_err_throttle(&s_water_err_ms, 5000u,
-                                                                 "[ERR] Water ADC open/short?\r\n");
-                                                 }
-                                                 /* ACS712: OUT long/short -> raw ~0 hoac ~4095 */
-                                                 if (shared_adc_data.raw_current <= 5u
-                                                         || shared_adc_data.raw_current >= 4090u) {
-                                                         debug_err_throttle(&s_acs_err_ms, 5000u,
-                                                                 "[ERR] ACS712 ADC open/short?\r\n");
-                                                 } else if (g_system_control.pump_status == 0
-                                                         && shared_adc_data.current_ampe > 1.0f) {
-                                                         /* Bom tat ma dong van cao: day / cam bien / zero lech */
-                                                         debug_err_throttle(&s_acs_err_ms, 5000u,
-                                                                 "[ERR] ACS712 idle high (loose/fault?)\r\n");
-                                                 }
+                                                 /* Soil hop le ~1250..4084 */
+                                                if (shared_adc_data.raw_soil < 1000u
+                                                    || shared_adc_data.raw_soil > 4090u) {
+                                                debug_err_throttle(&s_soil_err_ms, 5000u,
+                                                        "[ERR] Soil ADC out of range\r\n");
+                                                }
+                                                /* Water: kho~0 OK; uot~2250; chi bat raw cao bat thuong */
+                                                if (shared_adc_data.raw_water > 2800u) {
+                                                    debug_err_throttle(&s_water_err_ms, 5000u,
+                                                            "[ERR] Water ADC out of range\r\n");
+                                                }
+                                                /* ACS hop le ~1550..1650 (cho margin) */
+                                                if (shared_adc_data.raw_current < 1400u
+                                                    || shared_adc_data.raw_current > 2000u) {
+                                                debug_err_throttle(&s_acs_err_ms, 5000u,
+                                                        "[ERR] ACS ADC out of range\r\n");
+                                                } else if (g_system_control.pump_status == 0
+                                                    && shared_adc_data.current_ampe > 1.0f) {
+                                                debug_err_throttle(&s_acs_err_ms, 5000u,
+                                                        "[ERR] ACS712 idle high (loose/fault?)\r\n");
+                                                }
                                                  /* Flow: bom chay qua grace ma khong xung — day / sensor / ong kho */
                                                  if (g_system_control.pump_status == 1) {
                                                          if (!s_flow_pump_was_on) {
@@ -523,7 +535,22 @@
                                                                  g_pump_diagnostic = PUMP_DIAG_OK;
                                                          }
                                                  }
+                                                 /* Khoa tuoi khi nong (tranh soc nhiet cay) — chi Auto; Manual khong vao day */
+                                                 if (g_dht_ok && g_temp_c >= TEMP_BLOCK_C) {
+                                                         g_system_control.pump_status = 0;
+                                                 }
                                                  clamp_pump_for_water(&g_system_control.pump_status, shared_adc_data.water_percent);
+
+                                                 /* Cooldown: sau Auto ON->OFF, chan bat lai trong g_pump_cooldown_sec */
+                                                 if (old_pump != 0 && g_system_control.pump_status == 0
+                                                         && g_pump_cooldown_sec > 0) {
+                                                         s_pump_cooldown_until = millis()
+                                                                 + ((uint32_t)g_pump_cooldown_sec * 1000u);
+                                                 }
+                                                 if (g_system_control.pump_status != 0 && g_pump_cooldown_sec > 0
+                                                         && (int32_t)(s_pump_cooldown_until - millis()) > 0) {
+                                                         g_system_control.pump_status = 0;
+                                                 }
  
                                                  // C?p nh?t LCD cho bom n?u tr?ng th?i bom thay d?i
                                                  if (old_pump != g_system_control.pump_status) {
@@ -581,7 +608,8 @@
                                                          g_lcd_update = 1;
                                                  }
                                                  // Truong hop B: Dong cuc thap hoac khong co nuoc chay qua -> Chay kho
-                                                 else if (current_now_mA < 100 || flow_now_x10 < 2u) {
+                                                 /* Nguong dong DRY: 50mA (truoc 100). Bom that ~150mA — doi lai neu can */
+                                                 else if (current_now_mA < 50 || flow_now_x10 < 2u) {
                                                          g_pump_diagnostic = PUMP_DIAG_DRY_RUN;
                                                          g_system_control.pump_status = 0;
                                                          g_lcd_update = 1;

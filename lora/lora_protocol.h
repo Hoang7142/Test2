@@ -45,8 +45,9 @@ typedef struct LORA_PACKED {
 } lora_control_payload_t;
 
 typedef struct LORA_PACKED {
-  uint8_t soil_on;   // Bat bom khi do am dat < soil_on (%)
-  uint8_t soil_off;  // Tat bom khi do am dat > soil_off (%)
+  uint8_t soil_on;       // Bat bom khi do am dat < soil_on (%)
+  uint8_t soil_off;      // Tat bom khi do am dat > soil_off (%)
+  uint8_t cooldown_sec;  // Nghi sau tat bom Auto (0..60s, 0 = tat cooldown)
 } lora_threshold_payload_t;
 
 /** Ma chan doan bom — gui trong SENSOR_DATA.pump_diagnostic (1 byte) */
