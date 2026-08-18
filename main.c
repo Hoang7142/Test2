@@ -41,7 +41,7 @@
      .roof_status = 0  // 0 = STOP, MOTOR_FORWARD = OPEN, MOTOR_BACKWARD = CLOSE
  };
  uint8_t g_lcd_update = 1; // C? b?o hi?u c?n v? l?i m?n h?nh LCD
- uint8_t current_roof_pwm = 20; // Luu t?c d? m?i che nh?n t? Web
+ uint8_t current_roof_pwm = 15; // Luu t?c d? m?i che nh?n t? Web
  /* Bi?n qu?n l? ch?n do?n l?i tr?m bom th?c t? */
  uint8_t current_pump_pwm = 100;
  volatile pump_diagnostic_t g_pump_diagnostic = PUMP_DIAG_OK;
@@ -69,11 +69,11 @@
  static uint32_t s_pump_cooldown_until = 0;
  static uint8_t g_runtime_node_id = 0;
 
- /* Auto mai: latch bien + timeout (tranh nh? CTHT l?i ch?y / k?t không CTHT) */
+ /* Auto + Manual: latch bien CTHT (tranh nha CTHT / LoRa gui lai OPEN thi chay lai) */
  #define ROOF_MOVE_TIMEOUT_MS  30000u
  static uint8_t s_roof_latched_open = 0;   /* da toi bien OPEN (PB7) */
  static uint8_t s_roof_latched_close = 0;  /* da toi bien CLOSE (PB8) */
- static uint8_t s_roof_move_fault = 0;     /* timeout — giu STOP den khi doi trang thai mua */
+ static uint8_t s_roof_move_fault = 0;     /* timeout Auto — giu STOP den khi doi mua */
  static uint8_t s_roof_prev_rain = 0xFFu;
  static uint8_t s_roof_was_moving = 0;
  static uint32_t s_roof_move_since_ms = 0;
@@ -489,6 +489,16 @@
                                                           &current_pump_pwm,
                                                           &current_roof_pwm,
                                                           &g_lcd_update);
+
+                                         /* LCD bam mai (Manual): xoa latch — lenh chu dich cua user */
+                                         if (g_roof_lcd_cmd != 0) {
+                                                 if (g_system_control.system_mode == 0) {
+                                                         s_roof_latched_open = 0;
+                                                         s_roof_latched_close = 0;
+                                                         s_roof_move_fault = 0;
+                                                 }
+                                                 g_roof_lcd_cmd = 0;
+                                         }
  
                                          // 1. Luon luon quet song LoRa de nhan du lieu
                                          lora_node_poll(&node);
@@ -505,9 +515,42 @@
                                                  g_system_control.system_mode = g_remote_control.system_mode;
                                                  g_system_control.pump_status = g_remote_control.pump_status;
                                                  clamp_pump_for_water(&g_system_control.pump_status, shared_adc_data.water_percent);
-                                                 g_system_control.roof_status = g_remote_control.roof_status;
                                                  current_roof_pwm = g_remote_control.roof_pwm; // Nhan them PWM tu Web
                                                  current_pump_pwm = g_remote_control.pump_pwm;
+
+                                                 /* Manual: chan LoRa gui lai OPEN/CLOSE khi dang latch CTHT.
+                                                  * roof_status==0xFF: lenh bom/mode — khong doi mai / latch. */
+                                                 {
+                                                         uint8_t rr = g_remote_control.roof_status;
+                                                         if (rr == 0xFFu) {
+                                                                 /* giu nguyen roof_status hien tai */
+                                                         } else if (g_remote_control.system_mode == 0) {
+                                                                 if (rr == MOTOR_STOP) {
+                                                                         s_roof_latched_open = 0;
+                                                                         s_roof_latched_close = 0;
+                                                                         s_roof_move_fault = 0;
+                                                                         g_system_control.roof_status = MOTOR_STOP;
+                                                                 } else if (rr == MOTOR_FORWARD) {
+                                                                         if (s_roof_latched_open) {
+                                                                                 g_system_control.roof_status = MOTOR_STOP;
+                                                                         } else {
+                                                                                 s_roof_latched_close = 0;
+                                                                                 g_system_control.roof_status = MOTOR_FORWARD;
+                                                                         }
+                                                                 } else if (rr == MOTOR_BACKWARD) {
+                                                                         if (s_roof_latched_close) {
+                                                                                 g_system_control.roof_status = MOTOR_STOP;
+                                                                         } else {
+                                                                                 s_roof_latched_open = 0;
+                                                                                 g_system_control.roof_status = MOTOR_BACKWARD;
+                                                                         }
+                                                                 } else {
+                                                                         g_system_control.roof_status = MOTOR_STOP;
+                                                                 }
+                                                         } else if (rr <= MOTOR_BACKWARD) {
+                                                                 g_system_control.roof_status = rr;
+                                                         }
+                                                 }
                                                  #if CONTROL_TEST_DEBUG
                                                      debug_print_control_rx((const lora_control_payload_t*)&g_remote_control);
                                                  #endif
@@ -644,13 +687,21 @@
                                                          }
                                                  }
                                          } else {
-                                                 /* Manual: xoa latch/fault Auto; timeout van ap dung khi dang quay */
+                                                 /* Manual: giu latch CTHT; chi xoa fault/rain cua Auto khi roi Auto */
                                                  if (s_prev_system_mode == 1u) {
-                                                         s_roof_latched_open = 0;
-                                                         s_roof_latched_close = 0;
                                                          s_roof_move_fault = 0;
-                                                         s_roof_was_moving = 0;
                                                          s_roof_prev_rain = 0xFFu;
+                                                 }
+                                                 /* Enforce latch: khong cho quay lai cung chieu sau CTHT */
+                                                 if (s_roof_latched_open
+                                                                 && g_system_control.roof_status == MOTOR_FORWARD) {
+                                                         g_system_control.roof_status = MOTOR_STOP;
+                                                         g_lcd_update = 1;
+                                                 }
+                                                 if (s_roof_latched_close
+                                                                 && g_system_control.roof_status == MOTOR_BACKWARD) {
+                                                         g_system_control.roof_status = MOTOR_STOP;
+                                                         g_lcd_update = 1;
                                                  }
                                          }
                                          s_prev_system_mode = g_system_control.system_mode;
@@ -729,13 +780,17 @@
                      clamp_pump_for_water(&g_system_control.pump_status, shared_adc_data.water_percent);
                      Motor_Roof_Safety_Supervisor((uint8_t *)&g_system_control.roof_status, &g_lcd_update);
 
-                                         /* Dong bo latch khi CTHT dang nhan (sau supervisor) — Auto moi dung */
-                                         if (g_system_control.system_mode == 1) {
-                                                 if (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_8) == Bit_RESET) {
+                                         /* Dong bo latch khi CTHT dang nhan (sau supervisor) — Auto + Manual */
+                                         {
+                                                 uint8_t hit_close =
+                                                         (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_8) == Bit_RESET) ? 1u : 0u;
+                                                 uint8_t hit_open =
+                                                         (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_7) == Bit_RESET) ? 1u : 0u;
+                                                 if (hit_close) {
                                                          s_roof_latched_close = 1;
                                                          s_roof_latched_open = 0;
                                                  }
-                                                 if (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_7) == Bit_RESET) {
+                                                 if (hit_open) {
                                                          s_roof_latched_open = 1;
                                                          s_roof_latched_close = 0;
                                                  }
