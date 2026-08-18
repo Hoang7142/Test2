@@ -20,6 +20,9 @@ typedef struct {
     uint8_t roof_status;  /* FORWARD / BACKWARD / STOP */
 } menu_control_data_t;
 
+/* LCD vua bam mai: 0=khong, 1=OPEN, 2=CLOSE, 3=STOP ? main clear latch Manual */
+extern volatile uint8_t g_roof_lcd_cmd;
+
 void Menu_Init(void);
 /* pump_pwm / roof_pwm: 0..100 ? Manual UP/DOWN tren trang 4/5 */
 void Menu_Button_Scan(menu_control_data_t *control,

@@ -17,6 +17,8 @@ static btn_state_t btn_next_state = {0, 0};
 static btn_state_t btn_up_state = {0, 0};
 static btn_state_t btn_down_state = {0, 0};
 
+volatile uint8_t g_roof_lcd_cmd = 0; /* 0=none, 1=OPEN, 2=CLOSE, 3=STOP */
+
 extern uint32_t millis(void);
 
 static uint8_t btn_debounce(GPIO_TypeDef* port, uint16_t pin, btn_state_t* state, uint32_t now_ms) {
@@ -118,17 +120,25 @@ void Menu_Button_Scan(menu_control_data_t *control,
             }
         }
     } else if (lcd_page == 3) {
+        /* UP: dang OPEN -> STOP; else -> OPEN. DOWN: dang quay -> STOP; STOP -> CLOSE */
         if (btn_debounce(BTN_PORT, BTN_UP_PIN, &btn_up_state, now_ms)) {
-            if (control->roof_status != MOTOR_FORWARD) {
+            if (control->roof_status == MOTOR_FORWARD) {
+                control->roof_status = MOTOR_STOP;
+                g_roof_lcd_cmd = 3;
+            } else {
                 control->roof_status = MOTOR_FORWARD;
-                *update_flag = 1;
+                g_roof_lcd_cmd = 1;
             }
+            *update_flag = 1;
         }
         if (btn_debounce(BTN_PORT, BTN_DOWN_PIN, &btn_down_state, now_ms)) {
-            if (control->roof_status == MOTOR_BACKWARD) {
+            if (control->roof_status == MOTOR_FORWARD
+                    || control->roof_status == MOTOR_BACKWARD) {
                 control->roof_status = MOTOR_STOP;
+                g_roof_lcd_cmd = 3;
             } else {
                 control->roof_status = MOTOR_BACKWARD;
+                g_roof_lcd_cmd = 2;
             }
             *update_flag = 1;
         }
